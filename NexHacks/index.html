@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Overshoot Realtime Vision Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="beamsBackground" class="beams-background" aria-hidden="true"></div>
+    <div class="pill-nav-container" id="pillNav">
+      <nav class="pill-nav" aria-label="Primary">
+        <a class="pill-logo cursor-target" href="#detectionSection" aria-label="Home">
+          <span class="pill-logo-text">NexHacks</span>
+        </a>
+        <div class="pill-nav-items desktop-only">
+          <ul class="pill-list" role="menubar">
+            <li role="none">
+              <a role="menuitem" href="#detectionSection" class="pill cursor-target" aria-label="Home">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">Home</span>
+                  <span class="pill-label-hover" aria-hidden="true">Home</span>
+                </span>
+              </a>
+            </li>
+            <li role="none">
+              <a role="menuitem" href="#introSection" class="pill cursor-target is-empty" aria-label="About">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">About</span>
+                  <span class="pill-label-hover" aria-hidden="true">About</span>
+                </span>
+              </a>
+            </li>
+            <li role="none">
+              <a role="menuitem" href="#monitoringSection" class="pill cursor-target" aria-label="Monitoring">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">Monitoring</span>
+                  <span class="pill-label-hover" aria-hidden="true">Monitoring</span>
+                </span>
+              </a>
+            </li>
+            <li role="none">
+              <a role="menuitem" href="#alertsSection" class="pill cursor-target" aria-label="Alerts">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">Alerts</span>
+                  <span class="pill-label-hover" aria-hidden="true">Alerts</span>
+                </span>
+              </a>
+            </li>
+            <li role="none">
+              <a role="menuitem" href="#detectionSection" class="pill cursor-target" aria-label="Detection">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">Detection</span>
+                  <span class="pill-label-hover" aria-hidden="true">Detection</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <button class="mobile-menu-button mobile-only cursor-target" aria-label="Toggle menu" id="pillNavMobileToggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </nav>
+      <div class="mobile-menu-popover mobile-only" id="pillNavMobileMenu">
+        <ul class="mobile-menu-list">
+          <li><a href="#detectionSection" class="mobile-menu-link cursor-target">Home</a></li>
+          <li><a href="#introSection" class="mobile-menu-link cursor-target is-empty">About</a></li>
+          <li><a href="#monitoringSection" class="mobile-menu-link cursor-target">Monitoring</a></li>
+          <li><a href="#alertsSection" class="mobile-menu-link cursor-target">Alerts</a></li>
+          <li><a href="#detectionSection" class="mobile-menu-link cursor-target">Detection</a></li>
+        </ul>
+      </div>
+    </div>
+    <main class="page">
+      <header class="hero intro-hero" id="introSection">
+        <h1 id="introTitle">Dual-Mode Monitoring Prototype</h1>
+        <p class="subtitle">
+          <span id="introType" class="text-type"></span>
+          <span class="text-type__cursor">|</span>
+        </p>
+        <button id="introGetStartedBtn" class="primary cursor-target">Get Started</button>
+      </header>
+
+      <section class="intro-section" id="introHighlights">
+        <h2 class="scroll-float" data-text="What we're solving"></h2>
+        <p class="intro-subtext">
+          Early neurological change often hides in subtle asymmetries. We surface these changes continuously, with clear trends and
+          advisory alerts to support bedside vigilance.
+        </p>
+        <div class="spotlight-grid">
+          <div class="card-spotlight">
+            <h3>Silent Deterioration</h3>
+            <p>Catch gradual facial or pupil changes that can be missed during routine checks.</p>
+          </div>
+          <div class="card-spotlight">
+            <h3>FAST-Negative Cases</h3>
+            <p>Highlight subtle deviations when classic FAST screening appears normal.</p>
+          </div>
+          <div class="card-spotlight">
+            <h3>Objective Baselines</h3>
+            <p>Build a patient-specific baseline to detect persistent shifts with confidence.</p>
+          </div>
+        </div>
+        <h2 class="scroll-float" data-text="Explore Our Research" style="margin-top: 6rem;"></h2>
+        <div class="intro-subtext" style="margin-bottom: 2rem;">
+          Interact with our visual gallery — drag to rotate, click to enlarge.
+        </div>
+      </section>
+
+      <!-- Full Screen Dome Gallery View -->
+      <section class="intro-view" style="width: 100vw; height: 100vh; padding: 0; margin: 0; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw;">
+        <div id="domeGallery" style="width: 100%; height: 100%;"></div>
+      </section>
+
+      <!-- Logo Loop Section -->
+      <section class="logo-loop-section intro-view">
+        <h3>Shoutout to the sponsors and host!</h3>
+        <h2 class="scroll-float" data-text="Powered By">Couldn't do it without you 💚</h2>
+        <div class="logo-loop-container" id="logoLoopContainer"></div>
+      </section>
+
+      <section class="card app-view hidden">
+        <h2>Quick Start</h2>
+        <p id="setupStatus" class="hint">Using saved configuration.</p>
+        <div class="setup-actions">
+          <button id="setApiKeyBtn" class="ghost">Set API Key</button>
+          <span class="hint">Configuration is stored locally in this browser.</span>
+        </div>
+        <div class="hidden-config" aria-hidden="true">
+          <label class="field">
+            <span>API URL</span>
+            <input
+              id="apiUrl"
+              type="url"
+              value="https://cluster1.overshoot.ai/api/v0.2"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>API Key</span>
+            <input id="apiKey" type="password" placeholder="your-api-key" />
+          </label>
+          <label class="field">
+            <span>Prompt</span>
+            <input
+              id="prompt"
+              type="text"
+              value="Analyze the face and return detailed measurements. Measure facial asymmetry as a decimal from 0.0 to 1.0 where 0.0 is perfectly symmetric. Detect both eyes and pupils, measuring their positions and sizes in pixels. Always return valid JSON with these fields: symmetry_deviation (number), confidence (number 0-1), left_pupil (object with x, y, diameter_px, detected), right_pupil (object with x, y, diameter_px, detected), face_bbox (array of 4 numbers [x,y,width,height]). If a pupil is not visible, set detected to false but still provide estimated x, y, and diameter_px values."
+            />
+          </label>
+          <label class="field">
+            <span>Model (optional)</span>
+            <input
+              id="model"
+              type="text"
+              placeholder="Leave blank to use default model"
+            />
+          </label>
+          <label class="field">
+            <span>Camera Facing</span>
+            <select id="cameraFacing">
+              <option value="environment">Back (environment)</option>
+              <option value="user">Front (user)</option>
+            </select>
+          </label>
+          <label class="field field-wide">
+            <span>Stream Config (optional JSON)</span>
+            <textarea
+              id="streamConfig"
+              rows="4"
+              placeholder='{"clip_length_seconds": 1, "delay_seconds": 1, "fps": 12, "sampling_ratio": 0.2}'
+            ></textarea>
+          </label>
+        </div>
+        <div class="actions">
+          <button id="startBtn">Start Monitoring</button>
+          <button id="stopBtn" class="ghost" disabled>Stop</button>
+          <button id="interrogateBtn" class="ghost" disabled>
+            Start Interrogation
+          </button>
+        </div>
+        <p class="hint">
+          <strong>Monitoring Mode:</strong> Continuous tracking of facial symmetry and pupil metrics.
+          <strong>Interrogation Mode:</strong> On-demand assessment with speech analysis.
+        </p>
+      </section>
+
+      <section class="card controls-card app-view hidden">
+        <h2>Controls</h2>
+        <div class="config-options">
+          <label class="checkbox-field">
+            <input type="checkbox" id="fastNegativeToggle" />
+            <span>Simulate FAST-Negative Scenario (demo mode)</span>
+          </label>
+          <label class="checkbox-field">
+            <input type="checkbox" id="pupilRefineToggle" />
+            <span>Refine pupil location (TensorFlow Iris)</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="card app-view hidden" id="monitoringSection">
+        <h2>Monitoring Status</h2>
+        <div id="statusBadge" class="status-badge">IDLE</div>
+        <div class="status-grid">
+          <div>
+            <p class="label">Mode</p>
+            <p id="modeValue" class="value">Idle</p>
+          </div>
+          <div>
+            <p class="label">Rolling Median</p>
+            <p id="medianValue" class="value">--</p>
+          </div>
+          <div>
+            <p class="label">Alert Level</p>
+            <p id="alertValue" class="value">None</p>
+          </div>
+          <div>
+            <p class="label">Signal</p>
+            <p id="signalValue" class="value">Waiting</p>
+          </div>
+          <div>
+            <p class="label">Pupil Size (avg)</p>
+            <p id="pupilValue" class="value">--</p>
+          </div>
+        </div>
+        <div class="trend">
+          <canvas id="trendCanvas" width="900" height="180"></canvas>
+        </div>
+      </section>
+
+      <section class="card alert-card app-view hidden" id="alertsSection">
+        <h2>Alerts</h2>
+        <div id="alertPanel" class="alert-panel">
+          <p class="alert-title">No active alerts</p>
+          <p class="alert-detail">
+            Alerts are advisory only and must be acknowledged.
+          </p>
+          <button id="ackBtn" class="ghost" disabled>
+            Acknowledge Alert
+          </button>
+        </div>
+      </section>
+
+      <section class="card app-view hidden" id="detectionSection">
+        <h2>Live Preview</h2>
+        <div class="preview">
+          <video id="videoPreview" playsinline muted autoplay></video>
+          <canvas id="landmarkCanvas"></canvas>
+          <div class="status" id="status">
+            Waiting for a vision session...
+          </div>
+        </div>
+      </section>
+
+      <section class="card app-view hidden" id="outputSection">
+        <h2>Output</h2>
+        <div id="output" class="output">No output yet.</div>
+      </section>
+
+      <section class="card disclaimer app-view hidden" id="safetySection">
+        <h2>Clinical Limitations & Safety</h2>
+        <ul>
+          <li><strong>Not for clinical use:</strong> This prototype has not undergone clinical validation or regulatory review.</li>
+          <li><strong>Advisory only:</strong> System flags persistent baseline changes but does not diagnose or recommend actions.</li>
+          <li><strong>False positive tolerance:</strong> System is tuned for sensitivity (accepts ~1 false positive/hour to minimize false negatives).</li>
+          <li><strong>Language constraints:</strong> Terms like "baseline deviation" replace "neurological screening" to avoid diagnostic implications.</li>
+          <li><strong>FAST-Negative context:</strong> Designed to detect subtle multimodal changes in ambiguous presentations, not obvious emergencies.</li>
+        </ul>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="beams-background.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.5/dist/face-landmarks-detection.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "@overshoot/sdk": "./node_modules/@overshoot/sdk/dist/index.mjs"
+        }
+      }
+    </script>
+    <script src="pill-nav.js"></script>
+    <script src="text-type.js"></script>
+    <script src="spotlight.js"></script>
+    <script src="scroll-float.js"></script>
+    <script src="dome-gallery.js"></script>
+    <script src="card-swap.js"></script>
+    <script src="gradient-text.js"></script>
+    <script src="target-cursor.js"></script>
+    <script src="logo-loop.js"></script>
+    <script type="module" src="overshoot-loader.js"></script>
+    <script src="hardwareStub.js"></script>
+    <script src="speechAnalyzer.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
