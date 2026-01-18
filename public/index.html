@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Neuro Change Monitor</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>Neuro Change Monitor</h1>
+      <div class="header-controls">
+        <span id="connectionStatus" class="status-badge disconnected">Disconnected</span>
+        <span id="modeIndicator" class="mode-badge">Monitoring</span>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Left Panel: Video Feed -->
+      <section class="video-section">
+        <div class="video-container">
+          <video id="webcam" autoplay playsinline muted></video>
+          <canvas id="overlay" class="video-overlay"></canvas>
+          <div id="signalLost" class="signal-lost hidden">
+            <span class="signal-lost-icon">⚠</span>
+            <span>Signal Lost</span>
+          </div>
+        </div>
+
+        <!-- Controls -->
+        <div class="controls">
+          <button id="startBtn" class="btn btn-primary">Start Monitoring</button>
+          <button id="interrogateBtn" class="btn btn-secondary" disabled>Start Interrogation</button>
+          <button id="resetBtn" class="btn btn-outline" disabled>Reset Baseline</button>
+        </div>
+
+        <!-- Baseline Progress -->
+        <div id="baselineProgress" class="baseline-progress hidden">
+          <div class="progress-label">Establishing Baseline...</div>
+          <div class="progress-bar">
+            <div id="baselineBar" class="progress-fill"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right Panel: Charts & Alerts -->
+      <section class="data-section">
+        <!-- Current Values -->
+        <div class="current-values">
+          <div class="value-card">
+            <span class="value-label">Left Pupil</span>
+            <span id="leftPupilValue" class="value-number">--</span>
+          </div>
+          <div class="value-card">
+            <span class="value-label">Right Pupil</span>
+            <span id="rightPupilValue" class="value-number">--</span>
+          </div>
+          <div class="value-card">
+            <span class="value-label">Symmetry</span>
+            <span id="symmetryValue" class="value-number">--</span>
+          </div>
+          <div class="value-card">
+            <span class="value-label">Confidence</span>
+            <span id="confidenceValue" class="value-number">--</span>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-container">
+          <div class="chart-wrapper">
+            <h3>Pupil Size</h3>
+            <canvas id="pupilChart"></canvas>
+          </div>
+          <div class="chart-wrapper">
+            <h3>Face Symmetry</h3>
+            <canvas id="symmetryChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Alerts Panel -->
+        <div class="alerts-panel">
+          <div class="alerts-header">
+            <h3>Alerts</h3>
+            <button id="ackAllBtn" class="btn btn-small" disabled>Acknowledge All</button>
+          </div>
+          <div id="alertsList" class="alerts-list">
+            <div class="no-alerts">No active alerts</div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Interrogation Modal -->
+    <div id="interrogationModal" class="modal hidden">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>Interrogation Mode</h2>
+          <span id="questionProgress">Question 1 of 5</span>
+        </div>
+
+        <div class="modal-body">
+          <div id="questionText" class="question-text">Loading question...</div>
+
+          <div id="listeningIndicator" class="listening-indicator hidden">
+            <div class="listening-pulse"></div>
+            <span>Listening...</span>
+          </div>
+
+          <div id="transcriptDisplay" class="transcript-display hidden">
+            <label>Your response:</label>
+            <div id="transcript" class="transcript"></div>
+          </div>
+
+          <div id="responseTimer" class="response-timer">
+            <span>Time: </span>
+            <span id="timerValue">0.0s</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="skipQuestionBtn" class="btn btn-outline">Skip Question</button>
+          <button id="cancelInterrogationBtn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Modal -->
+    <div id="summaryModal" class="modal hidden">
+      <div class="modal-content modal-wide">
+        <div class="modal-header">
+          <h2>Interrogation Summary</h2>
+        </div>
+
+        <div class="modal-body">
+          <div id="summaryContent" class="summary-content">
+            <!-- Summary will be populated dynamically -->
+          </div>
+
+          <div class="summary-json">
+            <h4>Raw JSON</h4>
+            <pre id="summaryJson"></pre>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="closeSummaryBtn" class="btn btn-primary">Return to Monitoring</button>
+          <button id="exportSummaryBtn" class="btn btn-outline">Export JSON</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard Panel (collapsible) -->
+    <aside id="dashboardPanel" class="dashboard-panel collapsed">
+      <button id="toggleDashboard" class="dashboard-toggle">
+        <span>Dashboard</span>
+        <span class="toggle-icon">▶</span>
+      </button>
+      <div class="dashboard-content">
+        <div class="dashboard-stat">
+          <span class="stat-label">Uptime</span>
+          <span id="dashUptime" class="stat-value">--</span>
+        </div>
+        <div class="dashboard-stat">
+          <span class="stat-label">Analyses</span>
+          <span id="dashAnalyses" class="stat-value">0</span>
+        </div>
+        <div class="dashboard-stat">
+          <span class="stat-label">Avg Latency</span>
+          <span id="dashLatency" class="stat-value">--</span>
+        </div>
+        <div class="dashboard-stat">
+          <span class="stat-label">Total Alerts</span>
+          <span id="dashAlerts" class="stat-value">0</span>
+        </div>
+        <div class="dashboard-stat">
+          <span class="stat-label">Avg Ack Time</span>
+          <span id="dashAckTime" class="stat-value">--</span>
+        </div>
+        <div class="dashboard-stat">
+          <span class="stat-label">Errors</span>
+          <span id="dashErrors" class="stat-value">0</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Audio element for TTS playback -->
+  <audio id="audioPlayer" style="display: none;"></audio>
+
+  <!-- Scripts -->
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

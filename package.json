@@ -1,0 +1,23 @@
+{
+  "name": "neuro-monitor",
+  "version": "1.0.0",
+  "description": "Dual-mode neuro change monitor demo with pupil tracking and voice assessment",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "ws": "^8.14.2",
+    "@opentelemetry/api": "^1.7.0",
+    "@opentelemetry/sdk-node": "^0.45.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.45.0",
+    "@opentelemetry/resources": "^1.18.0",
+    "@opentelemetry/semantic-conventions": "^1.18.0"
+  },
+  "engines": {
+    "node": ">=16.x"
+  }
+}
