@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Overshoot Realtime Vision Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="magic-bento.css" />
+    <link rel="stylesheet" href="voice-counter.css" />
+  </head>
+  <body>
+    <div id="beamsBackground" class="beams-background" aria-hidden="true"></div>
+    <a class="corner-logo" href="#introSection" aria-label="Intro">
+      <span class="logo-metallic" aria-hidden="true">
+        <span class="logo-cube">
+          <span class="cube-face cube-front"></span>
+          <span class="cube-face cube-top"></span>
+          <span class="cube-face cube-side"></span>
+        </span>
+        <span class="logo-text">Labs</span>
+      </span>
+      <span class="sr-only">Intro</span>
+    </a>
+    <div class="pill-nav-container" id="pillNav">
+      <nav class="pill-nav" aria-label="Primary">
+        <div class="pill-nav-items desktop-only">
+          <ul class="pill-list" role="menubar">
+            <li role="none">
+              <a role="menuitem" href="#introSection" class="pill cursor-target" aria-label="Home">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">Home</span>
+                  <span class="pill-label-hover" aria-hidden="true">Home</span>
+                </span>
+              </a>
+            </li>
+            <li role="none">
+              <a role="menuitem" href="#detectionSection" class="pill cursor-target" aria-label="Monitoring">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">Monitoring</span>
+                  <span class="pill-label-hover" aria-hidden="true">Monitoring</span>
+                </span>
+              </a>
+            </li>
+            <li role="none">
+              <a role="menuitem" href="#voiceAssessmentSection" class="pill cursor-target" aria-label="Voice Assessment">
+                <span class="hover-circle" aria-hidden="true"></span>
+                <span class="label-stack">
+                  <span class="pill-label">Voice</span>
+                  <span class="pill-label-hover" aria-hidden="true">Voice</span>
+                </span>
+              </a>
+            </li>
+          </ul>
+        </div>
+        <button class="mobile-menu-button mobile-only cursor-target" aria-label="Toggle menu" id="pillNavMobileToggle">
+          <span class="hamburger-line"></span>
+          <span class="hamburger-line"></span>
+        </button>
+      </nav>
+      <div class="mobile-menu-popover mobile-only" id="pillNavMobileMenu">
+        <ul class="mobile-menu-list">
+          <li><a href="#introSection" class="mobile-menu-link cursor-target">Home</a></li>
+          <li><a href="#detectionSection" class="mobile-menu-link cursor-target">Monitoring</a></li>
+          <li><a href="#voiceAssessmentSection" class="mobile-menu-link cursor-target">Voice</a></li>
+        </ul>
+      </div>
+    </div>
+    <main class="page">
+      <header class="hero intro-hero" id="introSection">
+        <h1 id="introTitle">Dual-Mode Monitoring Prototype</h1>
+        <p class="subtitle">
+          <span id="introType" class="text-type"></span>
+          <span class="text-type__cursor">|</span>
+        </p>
+        <button id="introGetStartedBtn" class="primary cursor-target">Get Started</button>
+      </header>
+
+      <section class="intro-section" id="introHighlights">
+        <h2 class="scroll-float" data-text="What we're solving"></h2>
+        <p class="intro-subtext">
+          Early neurological change often hides in subtle asymmetries. We surface these changes continuously, with clear trends and
+          advisory alerts to support bedside vigilance.
+        </p>
+        <div class="spotlight-grid">
+          <div class="card-spotlight">
+            <h3>Silent Deterioration</h3>
+            <p>Catch gradual facial or pupil changes that can be missed during routine checks.</p>
+          </div>
+          <div class="card-spotlight">
+            <h3>FAST-Negative Cases</h3>
+            <p>Highlight subtle deviations when classic FAST screening appears normal.</p>
+          </div>
+          <div class="card-spotlight">
+            <h3>Objective Baselines</h3>
+            <p>Build a patient-specific baseline to detect persistent shifts with confidence.</p>
+          </div>
+        </div>
+        <h2 class="scroll-float" data-text="Explore Our Research" style="margin-top: 6rem;"></h2>
+        <div class="intro-subtext" style="margin-bottom: 2rem;">
+          Interact with our visual gallery — drag to rotate, click to enlarge.
+        </div>
+      </section>
+
+      <!-- Full Screen Dome Gallery View -->
+      <section class="intro-view" style="width: 100vw; height: 100vh; padding: 0; margin: 0; position: relative; left: 50%; right: 50%; margin-left: -50vw; margin-right: -50vw;">
+        <div id="domeGallery" style="width: 100%; height: 100%;"></div>
+      </section>
+
+      <!-- Logo Loop Section -->
+      <section class="logo-loop-section intro-view">
+        <h3>Shoutout to the sponsors and host!</h3>
+        <h2 class="scroll-float" data-text="Powered By">Couldn't do it without you 💚</h2>
+        <div class="logo-loop-container" id="logoLoopContainer"></div>
+      </section>
+
+      <!-- Dashboard: Live Camera and Detection -->
+      <section class="dashboard-container app-view hidden" id="detectionSection">
+        <div class="camera-section">
+          <div class="camera-preview">
+            <video id="videoPreview" playsinline muted autoplay></video>
+            <canvas id="landmarkCanvas"></canvas>
+            <div class="camera-status" id="status">
+              Ready to start monitoring
+            </div>
+          </div>
+          
+          <div class="camera-controls">
+            <button id="startBtn" class="primary">Start Monitoring</button>
+            <button id="stopBtn" class="ghost" disabled>Stop</button>
+            <button id="interrogateBtn" class="secondary" disabled>Start Interrogation</button>
+          </div>
+
+          <div class="camera-options">
+            <label class="checkbox-field">
+              <input type="checkbox" id="fastNegativeToggle" />
+              <span>FAST-Negative Demo Mode</span>
+            </label>
+            <label class="checkbox-field">
+              <input type="checkbox" id="pupilRefineToggle" checked />
+              <span>TensorFlow Pupil Refinement (Enabled)</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="data-section">
+          <h3>Detection Output</h3>
+          
+          <!-- MagicBento Grid for Output Data -->
+          <div id="magic-bento-container"></div>
+
+          <!-- Hidden elements for compatibility with app.js -->
+          <span id="modeValue" style="display: none;">Idle</span>
+          <span id="medianValue" style="display: none;">--</span>
+          <span id="alertValue" style="display: none;">None</span>
+          <span id="signalValue" style="display: none;">Waiting</span>
+          <span id="pupilValue" style="display: none;">--</span>
+
+          <div class="trend-section" style="margin-top: 2rem;">
+            <h4>Deviation Trend</h4>
+            <canvas id="trendCanvas" width="900" height="180"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Hidden inputs for app.js compatibility -->
+      <input id="apiUrl" type="hidden" value="https://cluster1.overshoot.ai/api/v0.2" />
+      <input id="apiKey" type="hidden" value="" />
+      <input id="prompt" type="hidden" value="Detect face and eyes. For each eye, locate the pupil center (x, y coordinates) and measure pupil diameter in pixels. Calculate facial symmetry as a score from 0.0 (symmetric) to 1.0 (asymmetric). Return: symmetry_deviation, confidence, left_pupil (x, y, diameter_px, detected), right_pupil (x, y, diameter_px, detected), face_bbox." />
+      <input id="model" type="hidden" value="" />
+      <input id="cameraFacing" type="hidden" value="user" />
+      </select>
+      <textarea id="streamConfig" style="display: none;"></textarea>
+
+      <!-- Hidden status badge for compatibility -->
+      <div id="statusBadge" class="status-badge" style="display: none;">IDLE</div>
+      
+      <!-- Hidden alert panel for compatibility -->
+      <div id="alertPanel" class="alert-panel" style="display: none;">
+        <p class="alert-title">No active alerts</p>
+        <p class="alert-detail">Alerts are advisory only and must be acknowledged.</p>
+        <button id="ackBtn" class="ghost" disabled>Acknowledge Alert</button>
+      </div>
+
+      <!-- Hidden output section for compatibility -->
+      <div id="output" class="output" style="display: none;">No output yet.</div>
+
+      <!-- Voice Assessment Section - New Single-Page Flow -->
+      <section class="voice-assessment-section app-view hidden" id="voiceAssessmentSection">
+        
+        <!-- Welcome/Info Screen -->
+        <div class="voice-welcome-screen" id="voiceWelcomeScreen">
+          <div class="voice-welcome-content">
+            <h1>Parkinson's Voice Assessment</h1>
+            <p class="voice-welcome-subtitle">Four-Task Protocol - 86% Detection Accuracy</p>
+            
+            <div class="protocol-overview">
+              <h3>Research-Based Protocol</h3>
+              <p>Based on Nature 2024 study with 4 complementary voice dimensions</p>
+              
+              <div class="protocol-tasks-grid">
+                <div class="protocol-task-card card-spotlight">
+                  <div class="task-number-badge">1</div>
+                  <h4>Sustained /aː/</h4>
+                  <p>10 seconds - Vocal cord control</p>
+                  <span class="accuracy-badge">85% accuracy</span>
+                </div>
+                <div class="protocol-task-card card-spotlight">
+                  <div class="task-number-badge">2</div>
+                  <h4>/pa-ta-ka/ DDK</h4>
+                  <p>10 seconds - Motor control & pitch</p>
+                  <span class="accuracy-badge">78% accuracy</span>
+                </div>
+                <div class="protocol-task-card card-spotlight">
+                  <div class="task-number-badge">3</div>
+                  <h4>Reading Passage</h4>
+                  <p>30 seconds - Real speech patterns</p>
+                  <span class="accuracy-badge">72% accuracy</span>
+                </div>
+                <div class="protocol-task-card card-spotlight">
+                  <div class="task-number-badge">4</div>
+                  <h4>Spontaneous Monologue</h4>
+                  <p>30 seconds - All dimensions</p>
+                  <span class="accuracy-badge">81% accuracy</span>
+                </div>
+              </div>
+            </div>
+            
+            <button class="primary cursor-target" id="startVoiceAssessmentBtn">Begin Assessment</button>
+          </div>
+        </div>
+
+        <!-- Single Task Recording Screen -->
+        <div class="voice-recording-screen hidden" id="voiceRecordingScreen">
+          <div class="task-progress-bar">
+            <div class="progress-step" data-step="1">
+              <div class="step-circle">1</div>
+              <span>Sustained /aː/</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="2">
+              <div class="step-circle">2</div>
+              <span>/pa-ta-ka/</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="3">
+              <div class="step-circle">3</div>
+              <span>Reading</span>
+            </div>
+            <div class="progress-line"></div>
+            <div class="progress-step" data-step="4">
+              <div class="step-circle">4</div>
+              <span>Monologue</span>
+            </div>
+          </div>
+
+          <div class="task-content">
+            <h2 id="currentTaskTitle">Task 1: Sustained /aː/</h2>
+            <p id="currentTaskInstructions" class="task-instructions-text">
+              Take a breath and say "ahhhhh" as steadily as possible until the timer ends.
+            </p>
+            <div id="currentTaskReadingText" class="reading-passage-box hidden"></div>
+
+            <div class="recording-area">
+              <!-- Waveform Canvas -->
+              <canvas id="voiceWaveformCanvas" class="voice-waveform-canvas" width="800" height="120"></canvas>
+              
+              <!-- Animated Counter Timer -->
+              <div class="voice-timer-container">
+                <div id="voiceTimer" class="voice-counter"></div>
+              </div>
+
+              <!-- Recording Controls -->
+              <div class="recording-controls">
+                <button class="voice-record-button primary cursor-target" id="voiceRecordButton">
+                  <span class="record-icon"></span>
+                  <span>Start Recording</span>
+                </button>
+              </div>
+
+              <!-- Status Text -->
+              <p id="recordingStatus" class="recording-status">Ready to record</p>
+            </div>
+
+            <!-- Task Results (shown after recording) -->
+            <div class="task-results-panel hidden" id="currentTaskResults">
+              <h3>Task Results</h3>
+              <div class="metrics-display" id="currentTaskMetrics"></div>
+              <button class="primary cursor-target" id="continueToNextTaskBtn">Continue</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Final Results Screen -->
+        <div class="voice-results-screen hidden" id="voiceResultsScreen">
+          <h2>Combined Analysis</h2>
+          <div class="results-summary">
+            <div class="risk-indicator-large">
+              <div class="risk-circle-large" id="finalRiskCircle">
+                <span class="risk-value" id="finalRiskValue">--</span>
+              </div>
+              <p class="risk-label">Parkinson's Risk Score</p>
+            </div>
+            
+            <div class="overall-metrics-grid">
+              <div class="metric-card-large">
+                <span class="metric-label">Overall Accuracy</span>
+                <span class="metric-value">86%</span>
+              </div>
+              <div class="metric-card-large">
+                <span class="metric-label">Confidence</span>
+                <span class="metric-value" id="finalConfidenceValue">--</span>
+              </div>
+              <div class="metric-card-large">
+                <span class="metric-label">Tasks Completed</span>
+                <span class="metric-value" id="finalTasksCompleted">4 / 4</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="clinical-recommendation-panel">
+            <h3>Clinical Recommendation</h3>
+            <p id="finalRecommendationText">--</p>
+          </div>
+
+          <div class="results-actions">
+            <button class="primary cursor-target" id="restartAssessmentBtn">Start New Assessment</button>
+            <button class="secondary cursor-target" id="downloadResultsBtn">Download Results</button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="beams-background.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.5/dist/face-landmarks-detection.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "@overshoot/sdk": "./node_modules/@overshoot/sdk/dist/index.mjs"
+        }
+      }
+    </script>
+    <script src="pill-nav.js"></script>
+    <script src="text-type.js"></script>
+    <script src="spotlight.js"></script>
+    <script src="true-focus.js"></script>
+    <script src="scroll-float.js"></script>
+    <script src="dome-gallery.js"></script>
+    <script src="card-swap.js"></script>
+    <script src="gradient-text.js"></script>
+    <script src="target-cursor.js"></script>
+    <script src="logo-loop.js"></script>
+    <script src="magic-bento.js"></script>
+    <script>console.log('🟣🟣🟣 INLINE SCRIPT BEFORE VOICE SCRIPTS 🟣🟣🟣');</script>
+    <script src="voice-counter.js?v=DEBUG001"></script>
+    <script src="voice-waveform.js?v=DEBUG001"></script>
+    <script src="parkinsons-voice.js?v=DEBUG001"></script>
+    <script src="voice-assessment-ui.js?v=DEBUG001"></script>
+    <script type="module" src="overshoot-loader.js"></script>
+    <script src="hardwareStub.js"></script>
+    <script src="speechAnalyzer.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

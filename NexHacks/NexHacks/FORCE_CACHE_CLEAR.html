@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cache Clear Test</title>
+</head>
+<body>
+    <h1>Testing Cache Clear</h1>
+    <script>
+        // Force reload all JavaScript files
+        const scripts = [
+            'voice-assessment-ui.js',
+            'parkinsons-voice.js',
+            'voice-counter.js',
+            'voice-waveform.js'
+        ];
+        
+        console.log('🧹 Clearing cache for voice files...');
+        
+        scripts.forEach(script => {
+            const url = `/${script}?v=${Date.now()}`;
+            fetch(url, { cache: 'reload' })
+                .then(() => console.log(`✅ Reloaded: ${script}`))
+                .catch(err => console.error(`❌ Failed: ${script}`, err));
+        });
+        
+        setTimeout(() => {
+            console.log('✅ Cache cleared! Redirecting to main page...');
+            window.location.href = '/index.html?v=' + Date.now();
+        }, 2000);
+    </script>
+</body>
+</html>

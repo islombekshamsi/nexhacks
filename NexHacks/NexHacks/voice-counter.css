@@ -1,0 +1,45 @@
+/* Voice Counter Styles */
+
+.voice-counter-container {
+  position: relative;
+  display: inline-block;
+}
+
+.voice-counter-display {
+  display: flex;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.voice-counter-digit {
+  position: relative;
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+}
+
+.voice-counter-number {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  text-align: center;
+  will-change: transform;
+}
+
+.voice-counter-gradients {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.voice-counter-gradient-top,
+.voice-counter-gradient-bottom {
+  width: 100%;
+  pointer-events: none;
+}
