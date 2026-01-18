@@ -549,18 +549,37 @@ body {
 .dashboard-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: 4rem 2rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 3rem;
+  align-items: center;
 }
 
 .camera-section {
+  width: 100%;
   background: linear-gradient(135deg, rgba(15, 17, 23, 0.9), rgba(20, 22, 30, 0.8));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;
   padding: 2rem;
   overflow: hidden;
+}
+
+.monitoring-main-title {
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #ffffff;
+  text-align: center;
+  width: 100%;
+}
+
+.monitoring-subtitle {
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: #b8c0d4;
+  margin-bottom: 3rem;
+  text-align: center;
+  width: 100%;
 }
 
 .camera-preview {
@@ -641,6 +660,7 @@ body {
 }
 
 .data-section {
+  width: 100%;
   background: linear-gradient(135deg, rgba(15, 17, 23, 0.9), rgba(20, 22, 30, 0.8));
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 20px;

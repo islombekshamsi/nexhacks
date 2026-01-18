@@ -2,35 +2,49 @@
   // Initialize Dome Gallery
   const domeContainer = document.getElementById("domeGallery");
   if (domeContainer && window.DomeGallery) {
+    // Prevent other scripts (e.g., app.js) from re-initializing and overriding images
+    window.__domeGalleryInitialized = true;
     new window.DomeGallery(domeContainer, {
       images: [
         {
-          src: 'https://images.unsplash.com/photo-1755331039789-7e5680e26e8f?q=80&w=1200&auto=format&fit=crop',
-          alt: 'Abstract art'
+          src: 'r1.png',
+          alt: 'Research Paper 1'
         },
         {
-          src: 'https://images.unsplash.com/photo-1755569309049-98410b94f66d?q=80&w=1200&auto=format&fit=crop',
-          alt: 'Modern sculpture'
+          src: 'r2.png',
+          alt: 'Research Paper 2'
         },
         {
-          src: 'https://images.unsplash.com/photo-1755497595318-7e5e3523854f?q=80&w=1200&auto=format&fit=crop',
-          alt: 'Digital artwork'
+          src: 'r3.png',
+          alt: 'Research Paper 3'
         },
         {
-          src: 'https://images.unsplash.com/photo-1755353985163-c2a0fe5ac3d8?q=80&w=1200&auto=format&fit=crop',
-          alt: 'Contemporary art'
+          src: 'r4.png',
+          alt: 'Research Paper 4'
         },
         {
-          src: 'https://images.unsplash.com/photo-1745965976680-d00be7dc0377?q=80&w=1200&auto=format&fit=crop',
-          alt: 'Geometric pattern'
+          src: 'r5.png',
+          alt: 'Research Paper 5'
         },
         {
-          src: 'https://images.unsplash.com/photo-1752588975228-21f44630bb3c?q=80&w=1200&auto=format&fit=crop',
-          alt: 'Textured surface'
+          src: 'r6.png',
+          alt: 'Research Paper 6'
         },
         {
-          src: 'https://pbs.twimg.com/media/Gyla7NnXMAAXSo_?format=jpg&name=large',
-          alt: 'Social media image'
+          src: 'r7.png',
+          alt: 'Research Paper 7'
+        },
+        {
+          src: 'r8.png',
+          alt: 'Research Paper 8'
+        },
+        {
+          src: 'r9.png',
+          alt: 'Research Paper 9'
+        },
+        {
+          src: 'r10.png',
+          alt: 'Research Paper 10'
         }
       ],
       segments: 12,
