@@ -390,6 +390,32 @@ app.get('/api/questions', (req, res) => {
   res.json(ElevenLabsClient.SCREENING_QUESTIONS);
 });
 
+// Log voice biomarkers from clinical protocol
+app.post('/api/voice-biomarkers', express.json(), (req, res) => {
+  const { sessionId, biomarkers, rawMetrics, updrsScore } = req.body;
+
+  if (!biomarkers) {
+    return res.status(400).json({ error: 'No biomarker data provided' });
+  }
+
+  // Log to Arize
+  arizeLogger.logVoiceBiomarkers({
+    sessionId: sessionId || 'unknown',
+    biomarkers,
+    rawMetrics,
+    updrsScore,
+    timestamp: Date.now()
+  });
+
+  console.log(`[VOICE] Biomarkers logged - UPDRS: ${updrsScore?.score || 'N/A'}, Session: ${sessionId || 'unknown'}`);
+
+  res.json({
+    success: true,
+    message: 'Voice biomarkers logged',
+    updrsScore
+  });
+});
+
 // Start server
 server.listen(PORT, () => {
   console.log(`

@@ -658,3 +658,318 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* ============================================
+   Voice Protocol Styles
+   ============================================ */
+
+/* Voice Task Name */
+.voice-task-name {
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  color: var(--accent-blue);
+  margin-bottom: 15px;
+}
+
+/* Voice Instruction */
+.voice-instruction {
+  font-size: 1.1rem;
+  text-align: center;
+  color: var(--text-primary);
+  margin-bottom: 25px;
+  line-height: 1.6;
+}
+
+/* Reading Passage */
+.reading-passage-container {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.reading-passage {
+  font-size: 1.15rem;
+  line-height: 1.8;
+  color: var(--text-primary);
+}
+
+/* Audio Visualizer */
+.audio-visualizer-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+#audioVisualizer {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.audio-level-bar {
+  width: 100%;
+  max-width: 400px;
+  height: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.audio-level-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+  width: 0%;
+  transition: width 0.05s ease;
+  border-radius: 5px;
+}
+
+/* Voice Recording Indicator */
+.voice-recording-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--alert-critical);
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+}
+
+.recording-pulse {
+  width: 14px;
+  height: 14px;
+  background: var(--alert-critical);
+  border-radius: 50%;
+  animation: recordingPulse 1s ease-in-out infinite;
+}
+
+@keyframes recordingPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.3); }
+}
+
+/* Voice Countdown */
+.voice-countdown {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 40px 0;
+}
+
+.voice-countdown #countdownNumber {
+  font-size: 5rem;
+  font-weight: 700;
+  color: var(--accent-blue);
+}
+
+@keyframes countdownPulse {
+  0% { transform: scale(1.5); opacity: 0; }
+  30% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.9); opacity: 0.7; }
+}
+
+/* Voice Timer */
+.voice-timer {
+  text-align: center;
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin-top: 10px;
+}
+
+.voice-timer #voiceTimerValue {
+  font-weight: 600;
+  color: var(--accent-blue);
+  font-size: 1.2rem;
+}
+
+.voice-timer #voiceTimerMax {
+  color: var(--text-secondary);
+}
+
+/* ============================================
+   Voice Biomarkers Section (in Summary Modal)
+   ============================================ */
+
+.voice-biomarkers-section {
+  margin-top: 25px;
+  padding-top: 25px;
+  border-top: 1px solid var(--border-color);
+}
+
+.voice-biomarkers-section h3 {
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* UPDRS Score Display */
+.updrs-score-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+.updrs-label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+.updrs-value {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--accent-green);
+  line-height: 1;
+}
+
+.updrs-value.slight { color: #8aff8a; }
+.updrs-value.mild { color: var(--alert-advisory); }
+.updrs-value.moderate { color: #ff8a4a; }
+.updrs-value.severe { color: var(--alert-critical); }
+
+.updrs-level {
+  font-size: 1rem;
+  color: var(--text-primary);
+  padding: 6px 16px;
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+/* Clinical Interpretation */
+.clinical-interpretation {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 15px 20px;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  border-left: 3px solid var(--accent-blue);
+}
+
+/* Biomarker Grid */
+.biomarker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 600px) {
+  .biomarker-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.biomarker-card {
+  background: var(--bg-tertiary);
+  border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  border: 1px solid var(--border-color);
+  transition: border-color 0.2s ease;
+}
+
+.biomarker-card.healthy {
+  border-color: var(--accent-green);
+}
+
+.biomarker-card.warning {
+  border-color: var(--alert-advisory);
+}
+
+.biomarker-card.critical {
+  border-color: var(--alert-critical);
+}
+
+.biomarker-name {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.biomarker-value {
+  display: inline;
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--accent-blue);
+}
+
+.biomarker-value.healthy { color: var(--accent-green); }
+.biomarker-value.warning { color: var(--alert-advisory); }
+.biomarker-value.critical { color: var(--alert-critical); }
+
+.biomarker-unit {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-left: 2px;
+}
+
+.biomarker-threshold {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  opacity: 0.8;
+}
+
+/* Voice Indicators */
+.voice-indicators {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.voice-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 15px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+}
+
+.voice-indicator.warning {
+  background: rgba(255, 170, 74, 0.1);
+  border-left: 3px solid var(--alert-advisory);
+  color: var(--alert-advisory);
+}
+
+.voice-indicator.critical {
+  background: rgba(255, 74, 74, 0.1);
+  border-left: 3px solid var(--alert-critical);
+  color: var(--alert-critical);
+}
+
+.voice-indicator-icon {
+  font-size: 1.1rem;
+}
+
+.voice-indicator-text {
+  flex-grow: 1;
+}
+
+/* Voice Task Progress Badge */
+#voiceTaskProgress {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  padding: 4px 12px;
+  border-radius: 12px;
+}

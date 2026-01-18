@@ -90,7 +90,7 @@ class NeuroCharts {
     };
 
     // Pupil Size Chart
-    const pupilCtx = document.getElementById('pupil-chart').getContext('2d');
+    const pupilCtx = document.getElementById('pupilChart').getContext('2d');
     this.charts.pupil = new Chart(pupilCtx, {
       type: 'line',
       data: {
@@ -153,7 +153,7 @@ class NeuroCharts {
     });
 
     // Face Symmetry Chart
-    const symmetryCtx = document.getElementById('symmetry-chart').getContext('2d');
+    const symmetryCtx = document.getElementById('symmetryChart').getContext('2d');
     this.charts.symmetry = new Chart(symmetryCtx, {
       type: 'line',
       data: {

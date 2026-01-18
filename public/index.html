@@ -6,6 +6,8 @@
   <title>Neuro Change Monitor</title>
   <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- face-api.js for local face/eye tracking -->
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -34,7 +36,7 @@
         <!-- Controls -->
         <div class="controls">
           <button id="startBtn" class="btn btn-primary">Start Monitoring</button>
-          <button id="interrogateBtn" class="btn btn-secondary" disabled>Start Interrogation</button>
+          <button id="lightTestBtn" class="btn btn-secondary">Light Reflex Test</button>
           <button id="resetBtn" class="btn btn-outline" disabled>Reset Baseline</button>
         </div>
 
@@ -128,16 +130,269 @@
       </div>
     </div>
 
+    <!-- Light Reflex Test Modal -->
+    <div id="lightTestModal" class="modal hidden">
+      <div class="modal-content modal-wide">
+        <div class="modal-header">
+          <h2>Pupillary Light Reflex Test</h2>
+          <span id="lightTestPhase">Preparing...</span>
+        </div>
+
+        <div class="modal-body">
+          <!-- Phase Icon -->
+          <div id="lightTestIcon" class="light-test-icon">🌙</div>
+
+          <!-- Phase Name -->
+          <div id="lightTestName" class="light-test-name">Baseline Measurement</div>
+
+          <!-- Instructions -->
+          <div id="lightTestInstruction" class="light-test-instruction">
+            Look at the camera in a dimly lit room. Keep your eyes open and still.
+          </div>
+
+          <!-- Live Pupil Display -->
+          <div class="pupil-live-display">
+            <div class="pupil-eye-box">
+              <span class="pupil-eye-label">Left Eye</span>
+              <div class="pupil-circle-container">
+                <div id="leftPupilCircle" class="pupil-circle"></div>
+              </div>
+              <span id="leftPupilLive" class="pupil-size-live">-- mm</span>
+            </div>
+            <div class="pupil-eye-box">
+              <span class="pupil-eye-label">Right Eye</span>
+              <div class="pupil-circle-container">
+                <div id="rightPupilCircle" class="pupil-circle"></div>
+              </div>
+              <span id="rightPupilLive" class="pupil-size-live">-- mm</span>
+            </div>
+          </div>
+
+          <!-- Progress Bar -->
+          <div class="light-test-progress">
+            <div class="light-test-progress-bar">
+              <div id="lightTestProgressFill" class="light-test-progress-fill"></div>
+            </div>
+            <span id="lightTestTimer">0s</span>
+          </div>
+
+          <!-- Debug Canvas (hidden by default) -->
+          <canvas id="pupilDebugCanvas" class="pupil-debug-canvas hidden"></canvas>
+        </div>
+
+        <div class="modal-footer">
+          <button id="cancelLightTestBtn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Light Test Results Modal -->
+    <div id="lightTestResultsModal" class="modal hidden">
+      <div class="modal-content modal-wide">
+        <div class="modal-header">
+          <h2>Light Reflex Test Results</h2>
+        </div>
+
+        <div class="modal-body">
+          <!-- Overall Risk -->
+          <div id="plrOverallRisk" class="plr-overall-risk">
+            <span class="plr-risk-label">Overall Assessment:</span>
+            <span id="plrRiskLevel" class="plr-risk-level low">NORMAL</span>
+          </div>
+
+          <!-- Interpretation -->
+          <div id="plrInterpretation" class="plr-interpretation"></div>
+
+          <!-- Eye Results Grid -->
+          <div class="plr-results-grid">
+            <!-- Left Eye -->
+            <div class="plr-eye-result">
+              <h4>Left Eye</h4>
+              <div class="plr-eye-status" id="leftEyeStatus">NORMAL</div>
+              <div class="plr-measurements">
+                <div class="plr-measurement">
+                  <span class="plr-measurement-label">Baseline (dark)</span>
+                  <span id="leftBaseline" class="plr-measurement-value">-- mm</span>
+                </div>
+                <div class="plr-measurement">
+                  <span class="plr-measurement-label">With Light</span>
+                  <span id="leftWithLight" class="plr-measurement-value">-- mm</span>
+                </div>
+                <div class="plr-measurement highlight">
+                  <span class="plr-measurement-label">Constriction</span>
+                  <span id="leftConstriction" class="plr-measurement-value">--%</span>
+                </div>
+              </div>
+              <div id="leftEyeMessage" class="plr-eye-message"></div>
+            </div>
+
+            <!-- Right Eye -->
+            <div class="plr-eye-result">
+              <h4>Right Eye</h4>
+              <div class="plr-eye-status" id="rightEyeStatus">NORMAL</div>
+              <div class="plr-measurements">
+                <div class="plr-measurement">
+                  <span class="plr-measurement-label">Baseline (dark)</span>
+                  <span id="rightBaseline" class="plr-measurement-value">-- mm</span>
+                </div>
+                <div class="plr-measurement">
+                  <span class="plr-measurement-label">With Light</span>
+                  <span id="rightWithLight" class="plr-measurement-value">-- mm</span>
+                </div>
+                <div class="plr-measurement highlight">
+                  <span class="plr-measurement-label">Constriction</span>
+                  <span id="rightConstriction" class="plr-measurement-value">--%</span>
+                </div>
+              </div>
+              <div id="rightEyeMessage" class="plr-eye-message"></div>
+            </div>
+          </div>
+
+          <!-- Clinical Reference -->
+          <div class="plr-reference">
+            <h4>Clinical Reference</h4>
+            <div class="plr-reference-item normal">Normal: 20-40% constriction</div>
+            <div class="plr-reference-item sluggish">Sluggish: 10-20% constriction</div>
+            <div class="plr-reference-item fixed">Fixed/Minimal: &lt;10% constriction (concerning)</div>
+          </div>
+
+          <!-- Disclaimer -->
+          <div class="plr-disclaimer">
+            <strong>Disclaimer:</strong> This is a screening tool only. A fixed or non-reactive pupil can indicate stroke, brain injury, or other serious conditions. If you have concerns, seek immediate medical attention.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="retryLightTestBtn" class="btn btn-secondary">Test Again</button>
+          <button id="closeLightTestBtn" class="btn btn-primary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Voice Protocol Modal -->
+    <div id="voiceProtocolModal" class="modal hidden">
+      <div class="modal-content modal-wide">
+        <div class="modal-header">
+          <h2>Clinical Voice Assessment</h2>
+          <span id="voiceTaskProgress">Task 1 of 4</span>
+        </div>
+
+        <div class="modal-body">
+          <!-- Task Name -->
+          <div id="voiceTaskName" class="voice-task-name">Sustained Vowel /a:/</div>
+
+          <!-- Instruction -->
+          <div id="voiceInstruction" class="voice-instruction">
+            Take a deep breath, then say "ahhh" in a comfortable pitch and hold it as long as you can.
+          </div>
+
+          <!-- Reading Passage (shown only for reading task) -->
+          <div id="readingPassageContainer" class="reading-passage-container hidden">
+            <p id="readingPassage" class="reading-passage"></p>
+          </div>
+
+          <!-- Audio Level Visualizer -->
+          <div class="audio-visualizer-container">
+            <canvas id="audioVisualizer" width="400" height="60"></canvas>
+            <div class="audio-level-bar">
+              <div id="audioLevelFill" class="audio-level-fill"></div>
+            </div>
+          </div>
+
+          <!-- Recording Indicator -->
+          <div id="voiceRecordingIndicator" class="voice-recording-indicator hidden">
+            <div class="recording-pulse"></div>
+            <span>Recording...</span>
+          </div>
+
+          <!-- Countdown Display -->
+          <div id="voiceCountdown" class="voice-countdown hidden">
+            <span id="countdownNumber">3</span>
+          </div>
+
+          <!-- Timer -->
+          <div id="voiceTimer" class="voice-timer">
+            <span>Time: </span>
+            <span id="voiceTimerValue">0.0s</span>
+            <span id="voiceTimerMax"> / 10s</span>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button id="skipVoiceTaskBtn" class="btn btn-outline">Skip Task</button>
+          <button id="cancelVoiceProtocolBtn" class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Summary Modal -->
     <div id="summaryModal" class="modal hidden">
       <div class="modal-content modal-wide">
         <div class="modal-header">
-          <h2>Interrogation Summary</h2>
+          <h2>Assessment Summary</h2>
         </div>
 
         <div class="modal-body">
           <div id="summaryContent" class="summary-content">
             <!-- Summary will be populated dynamically -->
+          </div>
+
+          <!-- Voice Biomarkers Section -->
+          <div id="voiceBiomarkersSection" class="voice-biomarkers-section hidden">
+            <h3>Voice Biomarker Analysis</h3>
+
+            <!-- UPDRS Score Display -->
+            <div class="updrs-score-display">
+              <span class="updrs-label">UPDRS Speech Score:</span>
+              <span id="updrsScore" class="updrs-value">0</span>
+              <span id="updrsLabel" class="updrs-level">Normal</span>
+            </div>
+
+            <!-- Clinical Interpretation -->
+            <div id="clinicalInterpretation" class="clinical-interpretation"></div>
+
+            <!-- Biomarker Grid -->
+            <div class="biomarker-grid">
+              <div class="biomarker-card">
+                <span class="biomarker-name">Jitter</span>
+                <span id="jitterValue" class="biomarker-value">--</span>
+                <span class="biomarker-unit">%</span>
+                <span class="biomarker-threshold">&lt;1.04% healthy</span>
+              </div>
+              <div class="biomarker-card">
+                <span class="biomarker-name">Shimmer</span>
+                <span id="shimmerValue" class="biomarker-value">--</span>
+                <span class="biomarker-unit">%</span>
+                <span class="biomarker-threshold">&lt;3.81% healthy</span>
+              </div>
+              <div class="biomarker-card">
+                <span class="biomarker-name">HNR</span>
+                <span id="hnrValue" class="biomarker-value">--</span>
+                <span class="biomarker-unit">dB</span>
+                <span class="biomarker-threshold">&gt;20 dB healthy</span>
+              </div>
+              <div class="biomarker-card">
+                <span class="biomarker-name">Syllable Rate</span>
+                <span id="syllableRateValue" class="biomarker-value">--</span>
+                <span class="biomarker-unit">Hz</span>
+                <span class="biomarker-threshold">5-7 Hz healthy</span>
+              </div>
+              <div class="biomarker-card">
+                <span class="biomarker-name">Pitch Range</span>
+                <span id="pitchRangeValue" class="biomarker-value">--</span>
+                <span class="biomarker-unit">Hz</span>
+                <span class="biomarker-threshold">&gt;50 Hz healthy</span>
+              </div>
+              <div class="biomarker-card">
+                <span class="biomarker-name">Speech Rate</span>
+                <span id="speechRateValue" class="biomarker-value">--</span>
+                <span class="biomarker-unit">wpm</span>
+                <span class="biomarker-threshold">&gt;120 wpm healthy</span>
+              </div>
+            </div>
+
+            <!-- Voice Indicators -->
+            <div id="voiceIndicators" class="voice-indicators"></div>
           </div>
 
           <div class="summary-json">
@@ -192,7 +447,12 @@
   <audio id="audioPlayer" style="display: none;"></audio>
 
   <!-- Scripts -->
+  <script src="https://unpkg.com/meyda@5.6.5/dist/web/meyda.min.js"></script>
   <script src="charts.js"></script>
+  <script src="face-tracker.js"></script>
+  <script src="pupil-detector.js"></script>
+  <script src="voice-analyzer.js"></script>
+  <script src="voice-protocol.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
