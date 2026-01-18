@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Overshoot Realtime Vision Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="disclaimer-banner">
+        <h3>⚠️ Research Prototype - Advisory Only</h3>
+        <p>
+          This system performs <strong>surface asymmetry tracking</strong> and <strong>baseline deviation monitoring</strong>.
+          It is NOT a diagnostic tool and does not provide treatment recommendations.
+          All alerts are advisory and require clinical review by qualified healthcare professionals.
+        </p>
+      </section>
+
+      <header class="hero">
+        <p class="eyebrow">Neurological Monitoring Adjunct</p>
+        <h1>Dual-Mode Monitoring Prototype</h1>
+        <p class="subtitle">
+          Continuous passive monitoring with on-demand active interrogation.
+          Tracks facial symmetry and pupil metrics to support clinical vigilance.
+        </p>
+      </header>
+
+      <section class="card">
+        <h2>Connect</h2>
+        <div class="grid">
+          <label class="field">
+            <span>API URL</span>
+            <input
+              id="apiUrl"
+              type="url"
+              value="https://cluster1.overshoot.ai/api/v0.2"
+              required
+            />
+          </label>
+          <label class="field">
+            <span>API Key</span>
+            <input id="apiKey" type="password" placeholder="ovs_6bb8b4a55cdc183397938f68c9502c1a" />
+          </label>
+          <label class="field">
+            <span>Prompt</span>
+            <input
+              id="prompt"
+              type="text"
+              value="Analyze facial symmetry AND pupil detection. Measure bilateral face asymmetry, detect both pupils, estimate diameter in pixels. Return JSON: {symmetry_deviation: number 0-1, confidence: number 0-1, left_pupil: {x: number, y: number, diameter_px: number, detected: bool}, right_pupil: {x, y, diameter_px, detected: bool}, face_bbox: [x,y,w,h]}"
+            />
+          </label>
+          <label class="field">
+            <span>Model (optional)</span>
+            <input
+              id="model"
+              type="text"
+              placeholder="Leave blank to use default model"
+            />
+          </label>
+          <label class="field">
+            <span>Camera Facing</span>
+            <select id="cameraFacing">
+              <option value="environment">Back (environment)</option>
+              <option value="user">Front (user)</option>
+            </select>
+          </label>
+          <label class="field field-wide">
+            <span>Stream Config (optional JSON)</span>
+            <textarea
+              id="streamConfig"
+              rows="4"
+              placeholder='{"clip_length_seconds": 1.0, "delay_seconds": 0.3, "fps": 20, "sampling_ratio": 0.4}'
+            ></textarea>
+          </label>
+        </div>
+        <div class="actions">
+          <button id="startBtn">Start Monitoring</button>
+          <button id="stopBtn" class="ghost" disabled>Stop</button>
+          <button id="interrogateBtn" class="ghost" disabled>
+            Start Interrogation
+          </button>
+        </div>
+        <div class="config-options">
+          <label class="checkbox-field">
+            <input type="checkbox" id="fastNegativeToggle" />
+            <span>Simulate FAST-Negative Scenario (demo mode)</span>
+          </label>
+          <p class="hint">
+            When enabled, subtle deviations are injected over time to demonstrate detection of changes that traditional FAST screening may miss.
+          </p>
+        </div>
+        <p class="hint">
+          <strong>Monitoring Mode:</strong> Continuous tracking of facial symmetry and pupil metrics.
+          <strong>Interrogation Mode:</strong> On-demand assessment with speech analysis.
+        </p>
+      </section>
+
+      <section class="card">
+        <h2>Monitoring Status</h2>
+        <div id="statusBadge" class="status-badge">IDLE</div>
+        <div class="status-grid">
+          <div>
+            <p class="label">Mode</p>
+            <p id="modeValue" class="value">Idle</p>
+          </div>
+          <div>
+            <p class="label">Rolling Median</p>
+            <p id="medianValue" class="value">--</p>
+          </div>
+          <div>
+            <p class="label">Alert Level</p>
+            <p id="alertValue" class="value">None</p>
+          </div>
+          <div>
+            <p class="label">Signal</p>
+            <p id="signalValue" class="value">Waiting</p>
+          </div>
+          <div>
+            <p class="label">Pupil Size (avg)</p>
+            <p id="pupilValue" class="value">--</p>
+          </div>
+        </div>
+        <div class="trend">
+          <canvas id="trendCanvas" width="900" height="180"></canvas>
+        </div>
+      </section>
+
+      <section class="card alert-card">
+        <h2>Alerts</h2>
+        <div id="alertPanel" class="alert-panel">
+          <p class="alert-title">No active alerts</p>
+          <p class="alert-detail">
+            Alerts are advisory only and must be acknowledged.
+          </p>
+          <button id="ackBtn" class="ghost" disabled>
+            Acknowledge Alert
+          </button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Live Preview</h2>
+        <div class="preview">
+          <video id="videoPreview" playsinline muted autoplay></video>
+          <canvas id="landmarkCanvas"></canvas>
+          <div class="status" id="status">
+            Waiting for a vision session...
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Output</h2>
+        <div id="output" class="output">No output yet.</div>
+      </section>
+
+      <section class="card">
+        <h2>Metrics Dashboard (Arize Stub)</h2>
+        <div class="status-grid">
+          <div>
+            <p class="label">p95 Latency</p>
+            <p id="p95Latency" class="value">--</p>
+          </div>
+          <div>
+            <p class="label">Alert Density</p>
+            <p id="alertDensity" class="value">--</p>
+          </div>
+          <div>
+            <p class="label">Time to Ack (median)</p>
+            <p id="timeToAck" class="value">--</p>
+          </div>
+          <div>
+            <p class="label">Frames Dropped %</p>
+            <p id="framesDropped" class="value">--</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>System Log (Arize stub)</h2>
+        <div id="log" class="output log"></div>
+      </section>
+
+      <section class="card disclaimer">
+        <h2>Clinical Limitations & Safety</h2>
+        <ul>
+          <li><strong>Not for clinical use:</strong> This prototype has not undergone clinical validation or regulatory review.</li>
+          <li><strong>Advisory only:</strong> System flags persistent baseline changes but does not diagnose or recommend actions.</li>
+          <li><strong>False positive tolerance:</strong> System is tuned for sensitivity (accepts ~1 false positive/hour to minimize false negatives).</li>
+          <li><strong>Language constraints:</strong> Terms like "baseline deviation" replace "neurological screening" to avoid diagnostic implications.</li>
+          <li><strong>FAST-Negative context:</strong> Designed to detect subtle multimodal changes in ambiguous presentations, not obvious emergencies.</li>
+        </ul>
+      </section>
+
+      <section class="card">
+        <h2>Example Usage</h2>
+        <pre class="code">
+// Official Overshoot SDK example
+const vision = new RealtimeVision({
+  apiUrl: 'https://cluster1.overshoot.ai/api/v0.2',
+  apiKey: 'your-api-key',
+  prompt: 'Analyze facial symmetry and detect pupils',
+  source: { type: 'camera', cameraFacing: 'user' },
+  processing: {
+    clip_length_seconds: 1,
+    delay_seconds: 1,
+    fps: 12,
+    sampling_ratio: 0.2
+  },
+  outputSchema: {
+    type: 'object',
+    properties: {
+      symmetry_deviation: { type: 'number' },
+      confidence: { type: 'number' }
+    }
+  },
+  onResult: (result) => {
+    console.log('Symmetry:', result.result);
+    console.log('Latency:', result.total_latency_ms, 'ms');
+  }
+})
+        </pre>
+      </section>
+    </main>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "@overshoot/sdk": "./node_modules/@overshoot/sdk/dist/index.mjs"
+        }
+      }
+    </script>
+    <script type="module" src="overshoot-loader.js"></script>
+    <script src="hardwareStub.js"></script>
+    <script src="speechAnalyzer.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
