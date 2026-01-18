@@ -6,33 +6,33 @@ console.log('🟢🟢🟢 voice-assessment-ui.js LOADING 🟢🟢🟢');
 (() => {
   'use strict';
 
-  // Task configurations
+  // Task configurations - Stroke Speech Screening
   const TASKS = [
     {
       id: 1,
-      title: 'Task 1: Sustained /aː/',
-      instructions: 'Take a breath and say "ahhhhh" as steadily as possible until the timer ends.',
+      title: 'Task 1: Sustained Vowel',
+      instructions: 'Take a deep breath and say "ahhhhh" as steadily as possible. Keep your voice smooth and consistent.',
       duration: 10,
       readingText: null
     },
     {
       id: 2,
-      title: 'Task 2: /pa-ta-ka/ Rapid Repetition',
-      instructions: 'Repeat "pa-ta-ka" as quickly and clearly as possible.',
+      title: 'Task 2: Rapid Articulation',
+      instructions: 'Say "pa-ta-ka" repeatedly as fast and clearly as you can. Focus on precision and speed.',
       duration: 10,
       readingText: null
     },
     {
       id: 3,
-      title: 'Task 3: Reading Passage',
-      instructions: 'Read the following passage aloud at a normal pace:',
+      title: 'Task 3: Sentence Reading',
+      instructions: 'Read the following sentence clearly at your normal speaking pace:',
       duration: 30,
-      readingText: '"When the sunlight strikes raindrops in the air, they act as a prism and form a rainbow. The rainbow is a division of white light into many beautiful colors. These take the shape of a long round arch, with its path high above, and its two ends apparently beyond the horizon."'
+      readingText: '"You know how that clever brown fox jumps over the lazy dog. When the sunlight strikes raindrops in the air, they act like a prism and form a beautiful rainbow across the sky."'
     },
     {
       id: 4,
-      title: 'Task 4: Spontaneous Monologue',
-      instructions: 'Describe your day or a recent event in detail.',
+      title: 'Task 4: Free Speech',
+      instructions: 'Describe what you did today or talk about your favorite hobby. Speak naturally and comfortably.',
       duration: 30,
       readingText: null
     }
@@ -55,12 +55,12 @@ console.log('🟢🟢🟢 voice-assessment-ui.js LOADING 🟢🟢🟢');
       // Welcome screen
       this.startBtn = document.getElementById('startVoiceAssessmentBtn');
       
-      // Initialize real Parkinson's Voice Assessment
+      // Initialize Stroke Voice Assessment (using same engine)
       if (typeof window.ParkinsonsVoiceAssessment !== 'undefined') {
         this.assessment = new window.ParkinsonsVoiceAssessment();
-        console.log('✅ ParkinsonsVoiceAssessment initialized');
+        console.log('✅ Stroke Voice Assessment engine initialized');
       } else {
-        console.error('❌ ParkinsonsVoiceAssessment class not found!');
+        console.error('❌ Voice assessment engine not found!');
         this.assessment = null;
       }
       
@@ -71,6 +71,7 @@ console.log('🟢🟢🟢 voice-assessment-ui.js LOADING 🟢🟢🟢');
       this.readingTextBox = document.getElementById('currentTaskReadingText');
       this.waveformCanvas = document.getElementById('voiceWaveformCanvas');
       this.recordBtn = document.getElementById('voiceRecordButton');
+      this.skipBtn = document.getElementById('voiceSkipButton');
       this.recordingStatus = document.getElementById('recordingStatus');
       this.resultsPanel = document.getElementById('currentTaskResults');
       this.metricsDisplay = document.getElementById('currentTaskMetrics');
@@ -109,6 +110,7 @@ console.log('🟢🟢🟢 voice-assessment-ui.js LOADING 🟢🟢🟢');
       }
       
       this.recordBtn?.addEventListener('click', () => this.toggleRecording());
+      this.skipBtn?.addEventListener('click', () => this.skipTask());
       this.continueBtn?.addEventListener('click', () => this.nextTask());
       this.restartBtn?.addEventListener('click', () => this.restart());
       this.downloadBtn?.addEventListener('click', () => this.downloadResults());
@@ -557,36 +559,150 @@ console.log('🟢🟢🟢 voice-assessment-ui.js LOADING 🟢🟢🟢');
       }
     }
 
+    skipTask() {
+      console.log('⏭️ Skipping task', this.currentTaskIndex + 1);
+      
+      // Stop any ongoing recording
+      if (this.isRecording) {
+        if (this.assessment?.cancelRecording) {
+          this.assessment.cancelRecording();
+        }
+        
+        if (this.recordingTimer) {
+          clearInterval(this.recordingTimer);
+          this.recordingTimer = null;
+        }
+        
+        this.isRecording = false;
+        this.recordBtn.classList.remove('recording');
+        this.recordBtn.disabled = false;
+        this.recordBtn.querySelector('span:last-child').textContent = 'Start Recording';
+        
+        // Stop waveform
+        if (this.waveform) {
+          this.waveform.stop();
+        }
+      }
+      
+      // Store skipped result
+      this.taskResults[this.currentTaskIndex] = {
+        skipped: true,
+        taskNumber: this.currentTaskIndex + 1,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Update progress indicator for skipped task
+      const currentStep = this.progressSteps[this.currentTaskIndex];
+      if (currentStep) {
+        currentStep.classList.add('skipped');
+        currentStep.setAttribute('data-status', 'skipped');
+      }
+      
+      // Show skipped message
+      this.recordingStatus.textContent = 'Task skipped';
+      this.recordingStatus.style.color = '#ffaa44';
+      
+      // Auto-advance after brief delay
+      setTimeout(() => {
+        const nextIndex = this.currentTaskIndex + 1;
+        
+        if (nextIndex < TASKS.length) {
+          // Load next task
+          this.loadTask(nextIndex);
+          
+          // Reset waveform
+          if (this.waveform) {
+            this.waveform.stop();
+          }
+        } else {
+          // All tasks done (completed or skipped) - show final results
+          this.showFinalResults();
+        }
+      }, 1000);
+    }
+
     showFinalResults() {
       console.log('🏁 All tasks complete - showing final results');
       
-      // Calculate overall risk score (mock)
-      const overallRisk = Math.floor(Math.random() * 40 + 15); // 15-55%
+      // Count completed vs skipped tasks
+      const completedTasks = this.taskResults.filter(r => r && !r.skipped).length;
+      const skippedTasks = this.taskResults.filter(r => r && r.skipped).length;
+      const totalTasks = TASKS.length;
       
-      // Update final results
-      document.getElementById('finalRiskValue').textContent = overallRisk + '%';
-      document.getElementById('finalConfidenceValue').textContent = '86%';
-      document.getElementById('finalTasksCompleted').textContent = '4 / 4';
+      console.log(`📊 Task summary: ${completedTasks} completed, ${skippedTasks} skipped out of ${totalTasks}`);
       
-      // Generate recommendation
+      // Get real stroke analysis from assessment engine
+      let strokeRisk = 0;
+      let severity = 'MINIMAL';
       let recommendation = '';
-      if (overallRisk < 25) {
-        recommendation = 'Results are within normal ranges. No immediate concerns detected.';
-      } else if (overallRisk < 40) {
-        recommendation = 'Mild deviations detected. Follow-up assessment recommended in 3-6 months.';
+      let confidence = 0;
+      let completedCount = 0;
+      
+      if (this.assessment && typeof this.assessment.getFusedAnalysis === 'function') {
+        const analysis = this.assessment.getFusedAnalysis();
+        console.log('📊 Fused stroke analysis:', analysis);
+        
+        strokeRisk = analysis.strokeRisk || 0;
+        severity = analysis.severity || 'MINIMAL';
+        recommendation = analysis.recommendation || 'No analysis available';
+        confidence = Math.round(analysis.confidence * 100);
+        completedCount = analysis.taskCount || 0;
+        
+        // Reduce confidence if tasks were skipped
+        if (skippedTasks > 0) {
+          const confidencePenalty = skippedTasks * 15; // -15% per skipped task
+          confidence = Math.max(20, confidence - confidencePenalty);
+        }
       } else {
-        recommendation = 'Significant deviations detected. Clinical evaluation recommended.';
+        console.warn('⚠️ Assessment engine not available, using fallback');
+        strokeRisk = 15;
+        severity = 'LOW';
+        recommendation = 'Assessment engine not initialized';
+        confidence = 50;
+        completedCount = completedTasks;
       }
+      
+      // Add note about skipped tasks to recommendation
+      if (skippedTasks > 0) {
+        recommendation += `\n\n⚠️ Note: ${skippedTasks} task(s) were skipped. Results are based on ${completedTasks}/${totalTasks} completed tasks. For more accurate assessment, complete all tasks.`;
+      }
+      
+      // Update final results with stroke risk
+      document.getElementById('finalRiskValue').textContent = strokeRisk + '%';
+      document.getElementById('finalConfidenceValue').textContent = confidence + '%';
+      
+      // Show completed/skipped breakdown
+      const tasksCompletedEl = document.getElementById('finalTasksCompleted');
+      if (skippedTasks > 0) {
+        tasksCompletedEl.textContent = `${completedTasks} / ${totalTasks} (${skippedTasks} skipped)`;
+        tasksCompletedEl.style.color = '#ffaa44'; // Orange for warning
+      } else {
+        tasksCompletedEl.textContent = `${completedTasks} / ${totalTasks}`;
+        tasksCompletedEl.style.color = ''; // Default color
+      }
+      
+      // Update recommendation text
       document.getElementById('finalRecommendationText').textContent = recommendation;
+      
+      // Update risk circle color based on severity
+      const riskCircle = document.getElementById('finalRiskCircle');
+      if (riskCircle) {
+        riskCircle.style.borderColor = 
+          severity === 'HIGH RISK' ? '#ff4444' :
+          severity === 'MODERATE' ? '#ffaa44' :
+          severity === 'LOW' ? '#44aaff' : '#44ff88';
+      }
       
       // Show results screen
       this.showResultsScreen();
       
       // Animate risk circle
-      gsap.fromTo('#finalRiskCircle', 
-        { scale: 0, rotation: -180 },
-        { scale: 1, rotation: 0, duration: 1, ease: 'back.out(1.7)' }
-      );
+      if (window.gsap) {
+        gsap.fromTo('#finalRiskCircle', 
+          { scale: 0, rotation: -180 },
+          { scale: 1, rotation: 0, duration: 1, ease: 'back.out(1.7)' }
+        );
+      }
     }
 
     restart() {

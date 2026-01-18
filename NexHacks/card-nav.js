@@ -129,7 +129,13 @@
   });
 
   cta?.addEventListener("click", () => {
-    document.querySelectorAll(".app-view").forEach((section) => section.classList.remove("hidden"));
+    document.querySelectorAll(".app-view").forEach((section) => {
+      if (section.id === "detectionSection") {
+        section.classList.remove("hidden");
+      } else {
+        section.classList.add("hidden");
+      }
+    });
     document.getElementById("introSection")?.classList.add("hidden");
     document.getElementById("introHighlights")?.classList.add("hidden");
     document.getElementById("detectionSection")?.scrollIntoView({ behavior: "smooth", block: "start" });

@@ -536,9 +536,12 @@ const attachPreview = (stream) => {
 };
 
 const drawLandmarks = (bbox, leftEye, rightEye, leftPupil, rightPupil, confidence) => {
+  // Overlay disabled - clear canvas and return
   const ctx = landmarkCanvas.getContext("2d");
   ctx.clearRect(0, 0, landmarkCanvas.width, landmarkCanvas.height);
+  return;
   
+  /* OVERLAY CODE DISABLED - uncomment to re-enable
   if (!bbox || !Array.isArray(bbox) || bbox.length < 4) return;
   
   const [x, y, w, h] = bbox;
@@ -615,6 +618,7 @@ const drawLandmarks = (bbox, leftEye, rightEye, leftPupil, rightPupil, confidenc
     ctx.arc(rightEyeX, eyeY, 8, 0, Math.PI * 2);
     ctx.fill();
   }
+  */
 };
 
 const loadTfDetector = async () => {
@@ -1340,8 +1344,27 @@ const updateMetricsDashboard = () => {
   }
 };
 
-// Dummy data generator for testing Output display
+// Initialize dynamic mock data generator
+let mockDataGenerator = null;
+let useMockData = false; // Toggle between Overshoot and mock data
+let mockDataInterval = null;
+
+const initMockDataGenerator = () => {
+  if (window.DynamicMockDataGenerator) {
+    mockDataGenerator = new window.DynamicMockDataGenerator();
+    console.log('✅ Mock data generator initialized');
+  } else {
+    console.warn('⚠️ DynamicMockDataGenerator not loaded');
+  }
+};
+
+// Legacy dummy data generator (kept for compatibility)
 const generateDummyDetection = () => {
+  if (mockDataGenerator) {
+    return mockDataGenerator.generateFrame();
+  }
+  
+  // Fallback to simple random data
   return {
     symmetry: 0.15 + Math.random() * 0.2,
     confidence: 0.7 + Math.random() * 0.2,
@@ -1378,10 +1401,9 @@ const startMonitoring = async () => {
   const apiKey = apiKeyInput.value.trim();
   console.log('🔍 Checking API key...', { hasKey: !!apiKey, keyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'EMPTY' });
   
-  if (!apiKey) {
-    setStatus("❌ API key not loaded. Please refresh the page.");
-    alert("API key is not loaded from backend. Please refresh the page and try again.");
-    return;
+  // Initialize mock data generator if not already done
+  if (!mockDataGenerator) {
+    initMockDataGenerator();
   }
 
   outputEl.textContent = "No output yet.";
@@ -1391,15 +1413,51 @@ const startMonitoring = async () => {
   setStatus("Starting monitoring...");
   setMode("Monitoring");
   
-  // Test output display immediately with dummy data
-  console.log("🧪 Testing output display before starting vision...");
-  setTimeout(() => {
-    const testData = generateDummyDetection();
-    console.log("Displaying test detection:", testData);
-    displayDetectionData(testData);
-  }, 1000);
   startBtn.disabled = true;
   stopBtn.disabled = true;
+  
+  // Start mock data stream as fallback
+  let overshootConnected = false;
+  let lastOvershootDataTime = Date.now();
+  const OVERSHOOT_TIMEOUT = 5000; // 5 seconds without data = fallback to mock
+  
+  // Start mock data interval (12 FPS = ~83ms per frame)
+  const startMockDataStream = () => {
+    console.log('🎭 Starting mock data stream...');
+    mockDataInterval = setInterval(() => {
+      // Only use mock if Overshoot hasn't provided data recently
+      const timeSinceLastData = Date.now() - lastOvershootDataTime;
+      
+      if (!overshootConnected || timeSinceLastData > OVERSHOOT_TIMEOUT) {
+        if (timeSinceLastData > OVERSHOOT_TIMEOUT && overshootConnected) {
+          console.warn('⚠️ Overshoot timeout - falling back to mock data');
+          overshootConnected = false;
+        }
+        
+        const mockData = generateDummyDetection();
+        mockData.source = 'mock_fallback';
+        
+        // Process mock data same as real data
+        lastOutput = mockData;
+        lastOutputTs = Date.now();
+        drawLandmarks(mockData.bbox, mockData.leftEye, mockData.rightEye, 
+                     mockData.leftPupil, mockData.rightPupil, mockData.confidence);
+        displayDetectionData(mockData);
+        
+        // Log mock data
+        logEvent("mock_data_frame", {
+          symmetry: mockData.symmetry,
+          confidence: mockData.confidence,
+          timestamp: Date.now(),
+          mode: "monitoring",
+          source: "dynamic_mock"
+        });
+      }
+    }, 83); // ~12 FPS
+  };
+  
+  // Start mock data stream immediately
+  startMockDataStream();
 
   try {
     visionSession = await connectVision(
@@ -1407,12 +1465,18 @@ const startMonitoring = async () => {
         // Debug: Log raw result to console
         console.log("🔍 Raw Overshoot Result:", result);
         
+        // Update last data time (Overshoot is working)
+        lastOvershootDataTime = Date.now();
+        overshootConnected = true;
+        
         // Try to parse the result
         let parsed = parseOutput(result);
         console.log("🎯 Parsed Output:", parsed);
         
         if (parsed) {
           parsed = applyTfRefinement(parsed);
+          parsed.source = 'overshoot';
+          
           // Success - display formatted detection card
           lastOutput = parsed;
           lastOutputTs = Date.now();
@@ -1428,7 +1492,8 @@ const startMonitoring = async () => {
             confidence: parsed.confidence,
             latency_ms: result.total_latency_ms || 0,
             timestamp: Date.now(),
-            mode: "monitoring"
+            mode: "monitoring",
+            source: "overshoot"
           });
         } else {
           // Fallback - show raw API response if parsing failed
@@ -1497,6 +1562,13 @@ const stopMonitoring = async () => {
   if (monitoringTimer) {
     clearInterval(monitoringTimer);
     monitoringTimer = null;
+  }
+  
+  // Stop mock data stream
+  if (mockDataInterval) {
+    clearInterval(mockDataInterval);
+    mockDataInterval = null;
+    console.log('🛑 Mock data stream stopped');
   }
 
   if (visionSession && typeof visionSession.stop === "function") {
@@ -1704,8 +1776,14 @@ if (pupilRefineToggle) {
 const introGetStartedBtn = document.getElementById("introGetStartedBtn");
 if (introGetStartedBtn) {
   introGetStartedBtn.addEventListener("click", () => {
-    // Show all dashboard sections
-    document.querySelectorAll(".app-view").forEach((section) => section.classList.remove("hidden"));
+    // Show only the monitoring dashboard section
+    document.querySelectorAll(".app-view").forEach((section) => {
+      if (section.id === "detectionSection") {
+        section.classList.remove("hidden");
+      } else {
+        section.classList.add("hidden");
+      }
+    });
     
     // Hide all intro sections
     document.getElementById("introSection")?.classList.add("hidden");
@@ -1832,4 +1910,7 @@ let magicBento = null;
     magicBento = window.initMagicBento();
     console.log('✅ MagicBento initialized');
   }
+  
+  // Initialize dynamic mock data generator
+  initMockDataGenerator();
 })();

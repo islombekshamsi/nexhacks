@@ -52,8 +52,12 @@
     console.log(`📊 Found ${appViews.length} app-view sections`);
     
     appViews.forEach((section) => {
-      section.classList.remove("hidden");
-      console.log("✅ Showing section:", section.id || section.className);
+      if (section.id === "detectionSection") {
+        section.classList.remove("hidden");
+        console.log("✅ Showing section:", section.id || section.className);
+      } else {
+        section.classList.add("hidden");
+      }
     });
     
     const introSection = document.getElementById("introSection");
@@ -76,11 +80,11 @@
     });
   };
 
-  const isHomeLink = (href) => href === "#detectionSection" || href === "#home" || href === "";
+  const isHomeLink = (href) => href === "#introSection" || href === "#home" || href === "";
   const isIntroLink = (href) => href === "#introSection";
   const isVoiceLink = (href) => href === "#voiceAssessmentSection";
   const isDashboardLink = (href) =>
-    href === "#monitoringSection" || href === "#alertsSection";
+    href === "#monitoringSection" || href === "#alertsSection" || href === "#detectionSection";
 
   const setupPill = (pill, circle) => {
     const rect = pill.getBoundingClientRect();

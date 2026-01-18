@@ -41,7 +41,7 @@ body {
   border: 0;
 }
 
-/* Metallic logo (top-left corner) */
+/* Logo (top-left corner) */
 .corner-logo {
   position: fixed;
   top: 18px;
@@ -49,86 +49,21 @@ body {
   z-index: 140;
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
   text-decoration: none;
   cursor: pointer;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.corner-logo .logo-metallic {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.7rem;
-  position: relative;
+.corner-logo:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
 }
 
-.corner-logo .logo-metallic::after {
-  content: "";
-  position: absolute;
-  inset: -4px -10px;
-  background: linear-gradient(110deg, transparent 0%, rgba(255, 255, 255, 0.15) 45%, transparent 60%);
-  opacity: 0.6;
-  transform: translateX(-120%);
-  animation: logoShine 4s ease-in-out infinite;
-  pointer-events: none;
-}
-
-.corner-logo .logo-cube {
-  position: relative;
-  width: 26px;
-  height: 26px;
-  transform: translateZ(0);
-}
-
-.corner-logo .cube-face {
-  position: absolute;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-}
-
-.corner-logo .cube-front {
-  left: 4px;
-  top: 6px;
-  background: linear-gradient(135deg, #e4f7ff 0%, #7cc8ff 40%, #2a7cff 100%);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.35);
-}
-
-.corner-logo .cube-top {
-  left: 8px;
-  top: 0;
-  background: linear-gradient(135deg, #ffffff 0%, #cfe8ff 60%, #94baff 100%);
-  transform: skewX(-18deg);
-}
-
-.corner-logo .cube-side {
-  left: 16px;
-  top: 8px;
-  background: linear-gradient(135deg, #7fb7ff 0%, #3566ff 70%, #1a2f7a 100%);
-  transform: skewY(-18deg);
-}
-
-.corner-logo .logo-text {
-  font-weight: 700;
-  font-size: 1rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  background: linear-gradient(120deg, #ffffff 0%, #8fd8ff 35%, #2f7bff 70%, #ffffff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: 0 0 18px rgba(84, 170, 255, 0.35);
-}
-
-@keyframes logoShine {
-  0% {
-    transform: translateX(-120%);
-  }
-  50% {
-    transform: translateX(120%);
-  }
-  100% {
-    transform: translateX(120%);
-  }
+.corner-logo-img {
+  height: 40px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
 }
 
 @media (max-width: 768px) {
@@ -137,18 +72,8 @@ body {
     left: 14px;
   }
 
-  .corner-logo .logo-cube {
-    width: 22px;
-    height: 22px;
-  }
-
-  .corner-logo .cube-face {
-    width: 16px;
-    height: 16px;
-  }
-
-  .corner-logo .logo-text {
-    font-size: 0.9rem;
+  .corner-logo-img {
+    height: 32px;
   }
 }
 
@@ -929,11 +854,13 @@ body {
   --true-focus-blur: 5px;
 }
 
-.true-focus-grid.true-focus-ready .card-spotlight {
+.true-focus-grid.true-focus-ready .card-spotlight,
+.true-focus-grid.true-focus-ready .protocol-task-card {
   transition: filter 0.3s ease, opacity 0.3s ease;
 }
 
-.true-focus-grid.true-focus-ready .card-spotlight:not(.true-focus-active) {
+.true-focus-grid.true-focus-ready .card-spotlight:not(.true-focus-active),
+.true-focus-grid.true-focus-ready .protocol-task-card:not(.true-focus-active) {
   filter: blur(var(--true-focus-blur));
   opacity: 0.65;
 }
@@ -1075,6 +1002,7 @@ body {
   box-sizing: border-box;
   gap: 10px;
 }
+
 
 .pill-nav-items {
   position: relative;
@@ -2191,39 +2119,45 @@ button:disabled:hover {
 
 .protocol-tasks-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1.5rem;
   margin: 2rem 0;
+  position: relative;
 }
 
 .protocol-task-card {
-  background: rgba(15, 19, 34, 0.6);
-  border: 1px solid rgba(64, 255, 170, 0.2);
-  border-radius: 16px;
-  padding: 2rem;
-  transition: all 0.3s ease;
   position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(15, 17, 23, 0.8), rgba(20, 22, 30, 0.6));
+  backdrop-filter: blur(10px);
+  padding: 2.5rem 2rem;
   overflow: hidden;
+  min-height: 200px;
+  transition: all 0.3s ease;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  --spotlight-color: rgba(64, 255, 170, 0.15);
 }
 
 .protocol-task-card::before {
-  content: '';
+  content: "";
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(circle at top left, rgba(64, 255, 170, 0.1), transparent);
+  inset: 0;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--spotlight-color), transparent 80%);
   opacity: 0;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
 }
 
 .protocol-task-card:hover {
-  border-color: var(--mint-green);
+  border-color: rgba(64, 255, 170, 0.3);
   transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(64, 255, 170, 0.1);
 }
 
-.protocol-task-card:hover::before {
+.protocol-task-card:hover::before,
+.protocol-task-card:focus-within::before {
   opacity: 1;
 }
 
@@ -2316,10 +2250,27 @@ button:disabled:hover {
   color: var(--mint-green);
 }
 
+.progress-step.skipped .step-circle {
+  background: rgba(255, 170, 68, 0.15);
+  border-color: rgba(255, 170, 68, 0.4);
+  color: #ffaa44;
+  position: relative;
+}
+
+.progress-step.skipped .step-circle::after {
+  content: '⏭';
+  position: absolute;
+  font-size: 1.4rem;
+}
+
 .progress-step span {
   font-size: 0.8rem;
   color: #b8c0d4;
   white-space: nowrap;
+}
+
+.progress-step.skipped span {
+  color: #ffaa44;
 }
 
 .progress-line {
@@ -2415,6 +2366,8 @@ button:disabled:hover {
 .recording-controls {
   display: flex;
   gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .voice-record-button {
@@ -2437,6 +2390,28 @@ button:disabled:hover {
 .voice-record-button.recording .record-icon {
   border-radius: 4px;
   animation: recordPulse 1s ease-in-out infinite;
+}
+
+.voice-skip-button {
+  padding: 1rem 2rem;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
+  transition: all 0.3s ease;
+}
+
+.voice-skip-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.9);
+  transform: translateY(-2px);
+}
+
+.voice-skip-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  transform: none;
 }
 
 @keyframes recordPulse {
@@ -2741,16 +2716,37 @@ button:disabled:hover {
 }
 
 .voice-task {
-  background: #0f1322;
-  border-radius: 16px;
-  border: 1px solid #2a3147;
+  position: relative;
+  background: linear-gradient(135deg, rgba(15, 17, 23, 0.8), rgba(20, 22, 30, 0.6));
+  border-radius: 1.25rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   overflow: hidden;
   transition: all 0.3s ease;
+  --mouse-x: 50%;
+  --mouse-y: 50%;
+  --spotlight-color: rgba(64, 255, 170, 0.15);
+}
+
+.voice-task::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mouse-x) var(--mouse-y), var(--spotlight-color), transparent 80%);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  pointer-events: none;
 }
 
 .voice-task:hover {
-  border-color: #40ffaa;
-  box-shadow: 0 4px 20px rgba(64, 255, 170, 0.1);
+  border-color: rgba(64, 255, 170, 0.3);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(64, 255, 170, 0.1);
+}
+
+.voice-task:hover::before,
+.voice-task:focus-within::before {
+  opacity: 1;
 }
 
 .task-header {
@@ -3079,6 +3075,12 @@ button:disabled:hover {
   }
 
   .fused-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .protocol-tasks-grid {
     grid-template-columns: 1fr;
   }
 }

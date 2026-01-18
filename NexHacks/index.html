@@ -11,14 +11,7 @@
   <body>
     <div id="beamsBackground" class="beams-background" aria-hidden="true"></div>
     <a class="corner-logo" href="#introSection" aria-label="Intro">
-      <span class="logo-metallic" aria-hidden="true">
-        <span class="logo-cube">
-          <span class="cube-face cube-front"></span>
-          <span class="cube-face cube-top"></span>
-          <span class="cube-face cube-side"></span>
-        </span>
-        <span class="logo-text">Labs</span>
-      </span>
+      <img src="Erly.png" alt="Erly Logo" class="corner-logo-img" />
       <span class="sr-only">Intro</span>
     </a>
     <div class="pill-nav-container" id="pillNav">
@@ -26,7 +19,7 @@
         <div class="pill-nav-items desktop-only">
           <ul class="pill-list" role="menubar">
             <li role="none">
-              <a role="menuitem" href="#detectionSection" class="pill cursor-target" aria-label="Home">
+              <a role="menuitem" href="#introSection" class="pill cursor-target" aria-label="Home">
                 <span class="hover-circle" aria-hidden="true"></span>
                 <span class="label-stack">
                   <span class="pill-label">Home</span>
@@ -35,38 +28,11 @@
               </a>
             </li>
             <li role="none">
-              <a role="menuitem" href="#introSection" class="pill cursor-target is-empty" aria-label="About">
-                <span class="hover-circle" aria-hidden="true"></span>
-                <span class="label-stack">
-                  <span class="pill-label">About</span>
-                  <span class="pill-label-hover" aria-hidden="true">About</span>
-                </span>
-              </a>
-            </li>
-            <li role="none">
-              <a role="menuitem" href="#monitoringSection" class="pill cursor-target" aria-label="Monitoring">
+              <a role="menuitem" href="#detectionSection" class="pill cursor-target" aria-label="Monitoring">
                 <span class="hover-circle" aria-hidden="true"></span>
                 <span class="label-stack">
                   <span class="pill-label">Monitoring</span>
                   <span class="pill-label-hover" aria-hidden="true">Monitoring</span>
-                </span>
-              </a>
-            </li>
-            <li role="none">
-              <a role="menuitem" href="#alertsSection" class="pill cursor-target" aria-label="Alerts">
-                <span class="hover-circle" aria-hidden="true"></span>
-                <span class="label-stack">
-                  <span class="pill-label">Alerts</span>
-                  <span class="pill-label-hover" aria-hidden="true">Alerts</span>
-                </span>
-              </a>
-            </li>
-            <li role="none">
-              <a role="menuitem" href="#detectionSection" class="pill cursor-target" aria-label="Detection">
-                <span class="hover-circle" aria-hidden="true"></span>
-                <span class="label-stack">
-                  <span class="pill-label">Detection</span>
-                  <span class="pill-label-hover" aria-hidden="true">Detection</span>
                 </span>
               </a>
             </li>
@@ -88,18 +54,15 @@
       </nav>
       <div class="mobile-menu-popover mobile-only" id="pillNavMobileMenu">
         <ul class="mobile-menu-list">
-          <li><a href="#detectionSection" class="mobile-menu-link cursor-target">Home</a></li>
-          <li><a href="#introSection" class="mobile-menu-link cursor-target is-empty">About</a></li>
-          <li><a href="#monitoringSection" class="mobile-menu-link cursor-target">Monitoring</a></li>
-          <li><a href="#alertsSection" class="mobile-menu-link cursor-target">Alerts</a></li>
-          <li><a href="#detectionSection" class="mobile-menu-link cursor-target">Detection</a></li>
-          <li><a href="#voiceAssessmentSection" class="mobile-menu-link cursor-target">Voice Assessment</a></li>
+          <li><a href="#introSection" class="mobile-menu-link cursor-target">Home</a></li>
+          <li><a href="#detectionSection" class="mobile-menu-link cursor-target">Monitoring</a></li>
+          <li><a href="#voiceAssessmentSection" class="mobile-menu-link cursor-target">Voice</a></li>
         </ul>
       </div>
     </div>
     <main class="page">
       <header class="hero intro-hero" id="introSection">
-        <h1 id="introTitle">Dual-Mode Monitoring Prototype</h1>
+        <h1 id="introTitle">Dual-Mode Monitoring</h1>
         <p class="subtitle">
           <span id="introType" class="text-type"></span>
           <span class="text-type__cursor">|</span>
@@ -200,7 +163,6 @@
       <input id="prompt" type="hidden" value="Detect face and eyes. For each eye, locate the pupil center (x, y coordinates) and measure pupil diameter in pixels. Calculate facial symmetry as a score from 0.0 (symmetric) to 1.0 (asymmetric). Return: symmetry_deviation, confidence, left_pupil (x, y, diameter_px, detected), right_pupil (x, y, diameter_px, detected), face_bbox." />
       <input id="model" type="hidden" value="" />
       <input id="cameraFacing" type="hidden" value="user" />
-        <option value="user">Front (user)</option>
       </select>
       <textarea id="streamConfig" style="display: none;"></textarea>
 
@@ -223,37 +185,37 @@
         <!-- Welcome/Info Screen -->
         <div class="voice-welcome-screen" id="voiceWelcomeScreen">
           <div class="voice-welcome-content">
-            <h1>Parkinson's Voice Assessment</h1>
-            <p class="voice-welcome-subtitle">Four-Task Protocol - 86% Detection Accuracy</p>
+            <h1>Stroke Speech Screening</h1>
+            <p class="voice-welcome-subtitle">4-Minute Assessment - FAST Protocol Speech Component</p>
             
             <div class="protocol-overview">
-              <h3>Research-Based Protocol</h3>
-              <p>Based on Nature 2024 study with 4 complementary voice dimensions</p>
+              <h3>Clinical Speech Analysis</h3>
+              <p>Detects dysarthria, slurred speech, and articulation abnormalities</p>
               
               <div class="protocol-tasks-grid">
-                <div class="protocol-task-card">
+                <div class="protocol-task-card card-spotlight">
                   <div class="task-number-badge">1</div>
-                  <h4>Sustained /aː/</h4>
-                  <p>10 seconds - Vocal cord control</p>
-                  <span class="accuracy-badge">85% accuracy</span>
+                  <h4>Sustained Vowel</h4>
+                  <p>10 seconds - Voice stability & breathiness</p>
+                  <span class="accuracy-badge">Vocal control</span>
                 </div>
-                <div class="protocol-task-card">
+                <div class="protocol-task-card card-spotlight">
                   <div class="task-number-badge">2</div>
-                  <h4>/pa-ta-ka/ DDK</h4>
-                  <p>10 seconds - Motor control & pitch</p>
-                  <span class="accuracy-badge">78% accuracy</span>
+                  <h4>/pa-ta-ka/ Rapid</h4>
+                  <p>10 seconds - Articulation speed & precision</p>
+                  <span class="accuracy-badge">Motor speech</span>
                 </div>
-                <div class="protocol-task-card">
+                <div class="protocol-task-card card-spotlight">
                   <div class="task-number-badge">3</div>
-                  <h4>Reading Passage</h4>
-                  <p>30 seconds - Real speech patterns</p>
-                  <span class="accuracy-badge">72% accuracy</span>
+                  <h4>Sentence Reading</h4>
+                  <p>30 seconds - Consonant clarity & slurring</p>
+                  <span class="accuracy-badge">Speech quality</span>
                 </div>
-                <div class="protocol-task-card">
+                <div class="protocol-task-card card-spotlight">
                   <div class="task-number-badge">4</div>
-                  <h4>Spontaneous Monologue</h4>
-                  <p>30 seconds - All dimensions</p>
-                  <span class="accuracy-badge">81% accuracy</span>
+                  <h4>Free Speech</h4>
+                  <p>30 seconds - Fluency & word-finding</p>
+                  <span class="accuracy-badge">Language function</span>
                 </div>
               </div>
             </div>
@@ -308,6 +270,9 @@
                   <span class="record-icon"></span>
                   <span>Start Recording</span>
                 </button>
+                <button class="voice-skip-button secondary cursor-target" id="voiceSkipButton">
+                  <span>Skip Task</span>
+                </button>
               </div>
 
               <!-- Status Text -->
@@ -325,19 +290,19 @@
 
         <!-- Final Results Screen -->
         <div class="voice-results-screen hidden" id="voiceResultsScreen">
-          <h2>Combined Analysis</h2>
+          <h2>Stroke Speech Analysis</h2>
           <div class="results-summary">
             <div class="risk-indicator-large">
               <div class="risk-circle-large" id="finalRiskCircle">
                 <span class="risk-value" id="finalRiskValue">--</span>
               </div>
-              <p class="risk-label">Parkinson's Risk Score</p>
+              <p class="risk-label">Stroke Risk Score</p>
             </div>
             
             <div class="overall-metrics-grid">
               <div class="metric-card-large">
-                <span class="metric-label">Overall Accuracy</span>
-                <span class="metric-value">86%</span>
+                <span class="metric-label">Assessment Method</span>
+                <span class="metric-value">FAST Speech</span>
               </div>
               <div class="metric-card-large">
                 <span class="metric-label">Confidence</span>
@@ -351,7 +316,7 @@
           </div>
 
           <div class="clinical-recommendation-panel">
-            <h3>Clinical Recommendation</h3>
+            <h3>Medical Guidance</h3>
             <p id="finalRecommendationText">--</p>
           </div>
 
@@ -395,6 +360,7 @@
     <script type="module" src="overshoot-loader.js"></script>
     <script src="hardwareStub.js"></script>
     <script src="speechAnalyzer.js"></script>
+    <script src="dynamic-mock-data.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

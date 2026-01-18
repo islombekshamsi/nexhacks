@@ -278,17 +278,34 @@ class ParkinsonsVoiceAssessment {
       const channelData = audioBuffer.getChannelData(0);
       const sampleRate = audioBuffer.sampleRate;
       
-      // Calculate basic metrics
+      // Calculate basic metrics (used for both Parkinson's and Stroke)
+      const jitter = this.calculateJitter(channelData, sampleRate);
+      const shimmer = this.calculateShimmer(channelData);
+      const hnr = this.estimateHNR(channelData);
+      const pitchRange = this.calculatePitchRange(channelData, sampleRate);
+      const loudnessVariation = this.calculateLoudnessVariation(channelData);
+      
+      // Stroke-specific metrics
+      const speechRate = this.calculateSpeechRate(channelData, sampleRate, audioBuffer.duration);
+      const articulationClarity = this.calculateArticulationClarity(channelData, sampleRate);
+      const pauseMetrics = this.analyzePauses(channelData, sampleRate);
+      
       const metrics = {
         duration: audioBuffer.duration,
         sampleRate: sampleRate,
-        // Placeholder values - will be replaced with actual analysis
-        jitter: this.calculateJitter(channelData, sampleRate),
-        shimmer: this.calculateShimmer(channelData),
-        hnr: this.estimateHNR(channelData),
-        pitchRange: this.calculatePitchRange(channelData, sampleRate),
-        syllableRate: this.estimateSyllableRate(transcription, audioBuffer.duration),
-        loudnessVariation: this.calculateLoudnessVariation(channelData)
+        // Core acoustic features
+        jitter: jitter,
+        shimmer: shimmer,
+        hnr: hnr,
+        pitchRange: pitchRange,
+        loudnessVariation: loudnessVariation,
+        // Stroke-specific features
+        speechRate: speechRate,
+        articulationClarity: articulationClarity,
+        avgPauseDuration: pauseMetrics.avgDuration,
+        pauseCount: pauseMetrics.count,
+        // Legacy
+        syllableRate: this.estimateSyllableRate(transcription, audioBuffer.duration)
       };
 
       return metrics;
@@ -296,6 +313,112 @@ class ParkinsonsVoiceAssessment {
       console.error('Error extracting metrics:', error);
       return null;
     }
+  }
+
+  // Calculate speech rate (syllables per second)
+  calculateSpeechRate(channelData, sampleRate, duration) {
+    // Detect syllables by counting energy peaks (voiced segments)
+    const frameSize = Math.floor(sampleRate * 0.02); // 20ms frames
+    const hopSize = Math.floor(frameSize / 2);
+    let syllableCount = 0;
+    let inSyllable = false;
+    const energyThreshold = 0.02;
+    
+    for (let i = 0; i < channelData.length - frameSize; i += hopSize) {
+      // Calculate frame energy
+      let energy = 0;
+      for (let j = 0; j < frameSize; j++) {
+        energy += channelData[i + j] * channelData[i + j];
+      }
+      energy = Math.sqrt(energy / frameSize);
+      
+      // Detect syllable peaks
+      if (energy > energyThreshold && !inSyllable) {
+        syllableCount++;
+        inSyllable = true;
+      } else if (energy < energyThreshold * 0.5) {
+        inSyllable = false;
+      }
+    }
+    
+    return duration > 0 ? syllableCount / duration : 0;
+  }
+
+  // Calculate articulation clarity (high-frequency energy ratio)
+  calculateArticulationClarity(channelData, sampleRate) {
+    // Use FFT to analyze frequency content
+    const fftSize = 2048;
+    const fft = new Float32Array(fftSize);
+    const windowSize = Math.min(fftSize, channelData.length);
+    
+    // Copy and window the data
+    for (let i = 0; i < windowSize; i++) {
+      fft[i] = channelData[i] * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / windowSize)); // Hanning window
+    }
+    
+    // Simple power calculation across frequency bands
+    let lowFreqEnergy = 0;
+    let highFreqEnergy = 0;
+    
+    // Approximate frequency analysis (low: 0-2kHz, high: 2-8kHz)
+    const lowBandEnd = Math.floor((2000 / sampleRate) * fftSize);
+    const highBandEnd = Math.floor((8000 / sampleRate) * fftSize);
+    
+    for (let i = 0; i < lowBandEnd && i < windowSize; i++) {
+      lowFreqEnergy += fft[i] * fft[i];
+    }
+    
+    for (let i = lowBandEnd; i < highBandEnd && i < windowSize; i++) {
+      highFreqEnergy += fft[i] * fft[i];
+    }
+    
+    // Return ratio (higher = better articulation)
+    return lowFreqEnergy > 0 ? highFreqEnergy / lowFreqEnergy : 0;
+  }
+
+  // Analyze pause patterns
+  analyzePauses(channelData, sampleRate) {
+    const frameSize = Math.floor(sampleRate * 0.02); // 20ms frames
+    const hopSize = Math.floor(frameSize / 2);
+    const silenceThreshold = 0.01;
+    const minPauseDuration = 0.2; // 200ms minimum pause
+    
+    const pauses = [];
+    let pauseStart = null;
+    let inPause = false;
+    
+    for (let i = 0; i < channelData.length - frameSize; i += hopSize) {
+      // Calculate frame energy
+      let energy = 0;
+      for (let j = 0; j < frameSize; j++) {
+        energy += Math.abs(channelData[i + j]);
+      }
+      energy /= frameSize;
+      
+      const currentTime = i / sampleRate;
+      
+      if (energy < silenceThreshold && !inPause) {
+        pauseStart = currentTime;
+        inPause = true;
+      } else if (energy >= silenceThreshold && inPause) {
+        const pauseDuration = currentTime - pauseStart;
+        if (pauseDuration >= minPauseDuration) {
+          pauses.push(pauseDuration);
+        }
+        inPause = false;
+        pauseStart = null;
+      }
+    }
+    
+    const avgDuration = pauses.length > 0 
+      ? pauses.reduce((sum, d) => sum + d, 0) / pauses.length 
+      : 0;
+    
+    return {
+      count: pauses.length,
+      avgDuration: avgDuration,
+      durations: pauses
+    };
   }
 
   // Calculate Jitter (fundamental frequency variation)
@@ -443,72 +566,112 @@ class ParkinsonsVoiceAssessment {
     return maxLoudness - minLoudness; // Return range in dB
   }
 
-  // Analyze metrics against dataset
+  // Analyze metrics for stroke risk
   analyzeMetrics(metrics) {
-    if (!metrics || !this.datasetStats) {
-      return { risk: 'unknown', confidence: 0, details: {} };
+    if (!metrics) {
+      return { risk: 'unknown', confidence: 0, strokeRisk: 0, details: {} };
     }
 
-    const scores = [];
+    let strokeRiskScore = 0;
     const details = {};
+    const maxScore = 100;
 
-    // Jitter analysis
+    // 1. Voice Instability (Jitter) - Reduced sensitivity (15 points max)
     if (metrics.jitter !== null) {
-      const jitterScore = this.calculateZScore(
-        metrics.jitter,
-        this.datasetStats.healthy.jitter.mean,
-        this.datasetStats.healthy.jitter.std
-      );
-      scores.push(jitterScore);
+      const jitterRisk = metrics.jitter > 0.02 ? 15 : metrics.jitter > 0.015 ? 8 : 0;
+      strokeRiskScore += jitterRisk;
       details.jitter = {
         value: metrics.jitter.toFixed(4),
-        threshold: this.datasetStats.healthy.jitter.threshold,
-        status: metrics.jitter < this.datasetStats.healthy.jitter.threshold ? 'normal' : 'elevated',
-        score: jitterScore
+        risk: jitterRisk,
+        status: metrics.jitter > 0.02 ? 'high-risk' : metrics.jitter > 0.015 ? 'moderate' : 'normal',
+        note: 'Voice stability'
       };
     }
 
-    // Shimmer analysis
+    // 2. Amplitude Instability (Shimmer) - Reduced sensitivity (15 points max)
     if (metrics.shimmer !== null) {
-      const shimmerScore = this.calculateZScore(
-        metrics.shimmer,
-        this.datasetStats.healthy.shimmer.mean,
-        this.datasetStats.healthy.shimmer.std
-      );
-      scores.push(shimmerScore);
+      const shimmerRisk = metrics.shimmer > 0.12 ? 15 : metrics.shimmer > 0.08 ? 8 : 0;
+      strokeRiskScore += shimmerRisk;
       details.shimmer = {
         value: metrics.shimmer.toFixed(4),
-        threshold: this.datasetStats.healthy.shimmer.threshold,
-        status: metrics.shimmer < this.datasetStats.healthy.shimmer.threshold ? 'normal' : 'elevated',
-        score: shimmerScore
+        risk: shimmerRisk,
+        status: metrics.shimmer > 0.12 ? 'high-risk' : metrics.shimmer > 0.08 ? 'moderate' : 'normal',
+        note: 'Loudness stability'
       };
     }
 
-    // HNR analysis
-    if (metrics.hnr !== null) {
-      const hnrScore = -this.calculateZScore(
-        metrics.hnr,
-        this.datasetStats.healthy.hnr.mean,
-        this.datasetStats.healthy.hnr.std
-      );
-      scores.push(hnrScore);
-      details.hnr = {
-        value: metrics.hnr.toFixed(2),
-        threshold: this.datasetStats.healthy.hnr.threshold,
-        status: metrics.hnr > this.datasetStats.healthy.hnr.threshold ? 'normal' : 'reduced',
-        score: hnrScore
+    // 3. Speech Rate - More lenient thresholds (18 points max)
+    if (metrics.speechRate !== null) {
+      const speechRateRisk = metrics.speechRate < 3.0 ? 18 : 
+                             metrics.speechRate < 4.0 ? 10 : 
+                             metrics.speechRate < 4.5 ? 3 : 0;
+      strokeRiskScore += speechRateRisk;
+      details.speechRate = {
+        value: metrics.speechRate.toFixed(2) + ' syl/sec',
+        risk: speechRateRisk,
+        status: metrics.speechRate < 3.0 ? 'very-slow' : 
+                metrics.speechRate < 4.0 ? 'slow' : 
+                metrics.speechRate < 4.5 ? 'borderline' : 'normal',
+        note: 'Speaking rate (normal: 4.5-7)'
       };
     }
 
-    // Calculate overall risk
-    const avgScore = scores.reduce((a, b) => a + b, 0) / scores.length;
-    const risk = avgScore > 1.5 ? 'elevated' : avgScore > 0.5 ? 'moderate' : 'low';
-    const confidence = Math.min(1, scores.length / 6); // Max 6 metrics
+    // 4. Articulation Clarity - Reduced sensitivity (15 points max)
+    if (metrics.articulationClarity !== null) {
+      const clarityRisk = metrics.articulationClarity < 0.2 ? 15 : 
+                          metrics.articulationClarity < 0.35 ? 8 : 0;
+      strokeRiskScore += clarityRisk;
+      details.articulationClarity = {
+        value: metrics.articulationClarity.toFixed(2),
+        risk: clarityRisk,
+        status: metrics.articulationClarity < 0.2 ? 'poor' : 
+                metrics.articulationClarity < 0.35 ? 'reduced' : 'normal',
+        note: 'Consonant clarity'
+      };
+    }
+
+    // 5. Pause Duration - Reduced sensitivity (12 points max)
+    if (metrics.avgPauseDuration !== null) {
+      const pauseRisk = metrics.avgPauseDuration > 1.5 ? 12 : 
+                        metrics.avgPauseDuration > 1.0 ? 5 : 0;
+      strokeRiskScore += pauseRisk;
+      details.pauseDuration = {
+        value: metrics.avgPauseDuration.toFixed(2) + 's',
+        risk: pauseRisk,
+        status: metrics.avgPauseDuration > 1.5 ? 'prolonged' : 
+                metrics.avgPauseDuration > 1.0 ? 'extended' : 'normal',
+        note: 'Pause length'
+      };
+    }
+
+    // Apply global reduction factor (0.65x) to reduce overall sensitivity
+    const reducedScore = Math.round(strokeRiskScore * 0.65);
+    const normalizedScore = Math.min(reducedScore, maxScore);
+    
+    // Classify stroke risk severity
+    let risk, severity;
+    if (normalizedScore >= 70) {
+      risk = 'high';
+      severity = 'HIGH RISK';
+    } else if (normalizedScore >= 40) {
+      risk = 'moderate';
+      severity = 'MODERATE';
+    } else if (normalizedScore >= 20) {
+      risk = 'low';
+      severity = 'LOW';
+    } else {
+      risk = 'minimal';
+      severity = 'MINIMAL';
+    }
+
+    const confidence = Math.min(1, Object.keys(details).length / 5); // 5 key metrics
 
     return {
       risk,
+      severity,
+      strokeRisk: normalizedScore,
       confidence,
-      riskScore: avgScore,
+      riskScore: normalizedScore / 100, // Normalize to 0-1 for compatibility
       details,
       metrics
     };
@@ -519,58 +682,81 @@ class ParkinsonsVoiceAssessment {
     return (value - mean) / std;
   }
 
-  // Get fused analysis of all tasks
+  // Get fused analysis of all tasks (Stroke Risk)
   getFusedAnalysis() {
     const completedTasks = Object.values(this.taskResults).filter(r => r !== null);
     
     if (completedTasks.length === 0) {
-      return { risk: 'unknown', confidence: 0, taskCount: 0 };
+      return { risk: 'unknown', strokeRisk: 0, confidence: 0, taskCount: 0 };
     }
 
-    // Weight tasks according to Nature 2024 research
+    // Weight tasks for stroke detection
     const taskWeights = {
-      task1: 0.85, // Sustained /aː/ - 85% accuracy
-      task2: 0.78, // /pa-ta-ka/ - 78% accuracy
-      task3: 0.72, // Reading - 72% accuracy
-      task4: 0.81  // Monologue - 81% accuracy
+      task1: 1.0,  // Sustained vowel - voice stability
+      task2: 1.2,  // /pa-ta-ka/ - HIGHEST weight for articulation speed
+      task3: 1.1,  // Reading - speech clarity & slurring
+      task4: 1.0   // Free speech - fluency & word-finding
     };
 
     let weightedRiskSum = 0;
     let totalWeight = 0;
+    let maxStrokeRisk = 0;
 
     Object.keys(this.taskResults).forEach(taskKey => {
       const result = this.taskResults[taskKey];
       if (result && result.analysis) {
         const weight = taskWeights[taskKey];
-        weightedRiskSum += result.analysis.riskScore * weight;
+        const taskStrokeRisk = result.analysis.strokeRisk || (result.analysis.riskScore * 100);
+        weightedRiskSum += taskStrokeRisk * weight;
         totalWeight += weight;
+        maxStrokeRisk = Math.max(maxStrokeRisk, taskStrokeRisk);
       }
     });
 
-    const fusedRiskScore = totalWeight > 0 ? weightedRiskSum / totalWeight : 0;
-    const risk = fusedRiskScore > 1.5 ? 'elevated' : fusedRiskScore > 0.5 ? 'moderate' : 'low';
+    // Apply conservative averaging with additional 0.8x reduction factor
+    const rawFusedRisk = totalWeight > 0 ? weightedRiskSum / totalWeight : 0;
+    const fusedStrokeRisk = rawFusedRisk * 0.8; // Additional reduction for safety
     
-    // Fused confidence: 86% with all 4 tasks
-    const confidence = Math.min(0.86, 0.5 + (completedTasks.length / 4) * 0.36);
+    // Classify overall stroke risk (adjusted thresholds)
+    let risk, severity;
+    if (fusedStrokeRisk >= 65) {
+      risk = 'high';
+      severity = 'HIGH RISK';
+    } else if (fusedStrokeRisk >= 35) {
+      risk = 'moderate';
+      severity = 'MODERATE';
+    } else if (fusedStrokeRisk >= 18) {
+      risk = 'low';
+      severity = 'LOW';
+    } else {
+      risk = 'minimal';
+      severity = 'MINIMAL';
+    }
+    
+    const confidence = Math.min(1.0, 0.5 + (completedTasks.length / 4) * 0.5);
 
     return {
       risk,
-      riskScore: fusedRiskScore,
+      severity,
+      strokeRisk: Math.round(fusedStrokeRisk),
+      riskScore: fusedStrokeRisk / 100, // Normalized for compatibility
       confidence,
       taskCount: completedTasks.length,
       completedTasks: Object.keys(this.taskResults).filter(k => this.taskResults[k] !== null),
-      recommendation: this.getRecommendation(risk, confidence)
+      recommendation: this.getRecommendation(risk, fusedStrokeRisk, confidence)
     };
   }
 
-  // Get recommendation based on risk level
-  getRecommendation(risk, confidence) {
-    if (risk === 'elevated') {
-      return 'Voice biomarkers show elevated deviation from healthy baseline. Clinical evaluation recommended.';
+  // Get recommendation based on stroke risk level
+  getRecommendation(risk, strokeRisk, confidence) {
+    if (risk === 'high') {
+      return '⚠️ HIGH STROKE RISK - Speech shows significant abnormalities. SEEK IMMEDIATE MEDICAL ATTENTION. Call 911 or go to nearest emergency room.';
     } else if (risk === 'moderate') {
-      return 'Some voice parameters show moderate deviation. Consider follow-up assessment.';
+      return '⚠️ MODERATE RISK - Speech patterns show concerning signs. Consult a doctor or neurologist as soon as possible.';
+    } else if (risk === 'low') {
+      return 'Low risk detected. Some minor speech variations present. Monitor symptoms and consult doctor if concerns arise.';
     } else {
-      return 'Voice parameters within normal baseline ranges.';
+      return '✓ Speech parameters appear normal. Continue regular health monitoring.';
     }
   }
 
@@ -587,6 +773,6 @@ class ParkinsonsVoiceAssessment {
   }
 }
 
-// Export for use in app
+// Export for use in app (keeping name for compatibility)
 window.ParkinsonsVoiceAssessment = ParkinsonsVoiceAssessment;
-console.log('✅ Parkinson\'s Voice Assessment module loaded');
+console.log('✅ Stroke Voice Assessment module loaded (engine initialized)');

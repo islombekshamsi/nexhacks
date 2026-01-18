@@ -236,16 +236,16 @@ gl_FragColor.rgb -= randomNoise / 15. * uNoiseIntensity;`,
       time: { value: 0 },
       roughness: 0.3,
       metalness: 0.3,
-      uSpeed: { value: 2 },
+      uSpeed: { value: 2.7 },
       envMapIntensity: 10,
-      uNoiseIntensity: { value: 1.75 },
-      uScale: { value: 0.2 },
+      uNoiseIntensity: { value: 1.25 },
+      uScale: { value: 0.26 },
     },
   });
 
-  const geometry = createStackedPlanesBufferGeometry(12, 2, 15, 0, 100);
+  const geometry = createStackedPlanesBufferGeometry(12, 2, 30, 0, 100);
   const mesh = new THREE.Mesh(geometry, beamMaterial);
-  mesh.rotation.z = -0.25;
+  mesh.rotation.z = THREE.MathUtils.degToRad(52);
   scene.add(mesh);
 
   const dirLight = new THREE.DirectionalLight(0xffffff, 1);

@@ -1,5 +1,5 @@
 (() => {
-  const cards = document.querySelectorAll(".card-spotlight");
+  const cards = document.querySelectorAll(".card-spotlight, .voice-task, .protocol-task-card");
   if (!cards.length) return;
 
   cards.forEach((card) => {
