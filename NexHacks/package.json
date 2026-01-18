@@ -1,8 +1,0 @@
-{
-  "scripts": {
-    "dev": "node server.js"
-  },
-  "dependencies": {
-    "@overshoot/sdk": "^0.1.0-alpha.2"
-  }
-}
