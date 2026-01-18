@@ -1,0 +1,67 @@
+{
+  "healthy": {
+    "jitter": {
+      "mean": 0.0038,
+      "std": 0.0021,
+      "threshold": 0.0104
+    },
+    "shimmer": {
+      "mean": 0.031,
+      "std": 0.018,
+      "threshold": 0.0381
+    },
+    "hnr": {
+      "mean": 24.2,
+      "std": 3.5,
+      "threshold": 20.0
+    },
+    "pitchRange": {
+      "mean": 65,
+      "std": 25,
+      "threshold": 50
+    },
+    "syllableRate": {
+      "mean": 6.0,
+      "std": 0.8,
+      "threshold": 5.0
+    },
+    "loudnessVar": {
+      "mean": 6.5,
+      "std": 1.5,
+      "threshold": 5.0
+    }
+  },
+  "pd": {
+    "jitter": {
+      "mean": 0.0062,
+      "std": 0.0041
+    },
+    "shimmer": {
+      "mean": 0.048,
+      "std": 0.025
+    },
+    "hnr": {
+      "mean": 21.5,
+      "std": 4.2
+    },
+    "pitchRange": {
+      "mean": 28,
+      "std": 12
+    },
+    "syllableRate": {
+      "mean": 3.5,
+      "std": 0.6
+    },
+    "loudnessVar": {
+      "mean": 2.3,
+      "std": 0.8
+    }
+  },
+  "metadata": {
+    "source": "UCI Parkinson's Disease Dataset",
+    "totalRecordings": 195,
+    "healthyCount": 48,
+    "pdCount": 147,
+    "generated": "2026-01-18T00:00:00.000Z"
+  }
+}

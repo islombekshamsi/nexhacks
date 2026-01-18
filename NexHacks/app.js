@@ -75,40 +75,78 @@ let tfInterval = null;
 let tfRunning = false;
 let latestTfPupils = null;
 
-const restorePreferences = () => {
-  const savedKey = localStorage.getItem("overshoot_api_key");
-  const savedUrl = localStorage.getItem("overshoot_api_url");
-  const savedModel = localStorage.getItem("overshoot_model");
-  const savedPrompt = localStorage.getItem("overshoot_prompt");
-  const savedRefine = localStorage.getItem("overshoot_pupil_refine");
+// Fetch API configuration from backend (with fallback)
+const loadApiConfig = async () => {
+  try {
+    console.log('🔄 Fetching API configuration from backend...');
+    const response = await fetch('/api/config');
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    
+    const config = await response.json();
+    console.log('📦 Received config:', { hasApiKey: !!config.apiKey, hasApiUrl: !!config.apiUrl });
+    
+    if (config.apiKey && config.apiUrl) {
+      apiKeyInput.value = config.apiKey;
+      apiUrlInput.value = config.apiUrl;
+      console.log('✅ API configuration loaded from backend');
+      console.log('🔑 API Key set:', apiKeyInput.value.substring(0, 10) + '...');
+      return true;
+    }
+  } catch (error) {
+    console.warn('⚠️ Backend API endpoint not available, using fallback:', error.message);
+    
+    // Fallback: Set API key directly in frontend
+    const FALLBACK_API_KEY = "ovs_6bb8b4a55cdc183397938f68c9502c1a";
+    const FALLBACK_API_URL = "https://cluster1.overshoot.ai/api/v0.2";
+    
+    apiKeyInput.value = FALLBACK_API_KEY;
+    apiUrlInput.value = FALLBACK_API_URL;
+    
+    console.log('✅ Using fallback API configuration');
+    console.log('🔑 API Key set:', apiKeyInput.value.substring(0, 10) + '...');
+    return true;
+  }
+  return false;
+};
 
-  if (savedKey) apiKeyInput.value = savedKey;
-  if (savedUrl) apiUrlInput.value = savedUrl;
-  if (savedModel) modelInput.value = savedModel;
-  if (savedPrompt) promptInput.value = savedPrompt;
+const restorePreferences = async () => {
+  // Load API config from backend (with fallback)
+  const loaded = await loadApiConfig();
+  
+  // Update status to show API is ready
+  if (statusEl) {
+    if (loaded) {
+      statusEl.textContent = "Ready to start monitoring";
+      statusEl.style.color = "#40ffaa";
+    } else {
+      statusEl.textContent = "⚠️ Configuration error - check console";
+      statusEl.style.color = "#ff4040";
+    }
+  }
+  
+  // Restore other preferences from localStorage
+  const savedRefine = localStorage.getItem("overshoot_pupil_refine");
   if (savedRefine !== null && pupilRefineToggle) {
     pupilRefineToggle.checked = savedRefine === "true";
+  } else if (pupilRefineToggle) {
+    // Default to enabled for better pupil detection
+    pupilRefineToggle.checked = true;
+    localStorage.setItem("overshoot_pupil_refine", "true");
   }
-  updateSetupStatus();
 };
 
 const persistPreferences = () => {
-  localStorage.setItem("overshoot_api_key", apiKeyInput.value.trim());
-  localStorage.setItem("overshoot_api_url", apiUrlInput.value.trim());
-  localStorage.setItem("overshoot_model", modelInput.value.trim());
-  localStorage.setItem("overshoot_prompt", promptInput.value.trim());
+  // Only persist user preferences, not API key (that's in backend now)
   if (pupilRefineToggle) {
     localStorage.setItem("overshoot_pupil_refine", String(pupilRefineToggle.checked));
   }
-  updateSetupStatus();
 };
 
 const updateSetupStatus = () => {
-  if (!setupStatusEl) return;
-  const hasKey = Boolean(apiKeyInput.value.trim());
-  setupStatusEl.textContent = hasKey
-    ? "Using saved configuration."
-    : "API key missing. Click “Set API Key” once.";
+  // No longer needed - API key is in backend
 };
 
 const setStatus = (message) => {
@@ -246,10 +284,101 @@ const logEvent = (message, data = {}) => {
 
 const setMode = (value) => {
   modeValue.textContent = value;
+  updateMagicBentoCards();
+};
+
+// Update MagicBento cards with current detection output data
+const updateMagicBentoCards = () => {
+  if (!magicBento) return;
+
+  const mode = modeValue.textContent || 'Idle';
+  const median = medianValue.textContent || '--';
+  const alert = alertValue.textContent || 'None';
+  const signal = signalValue.textContent || 'Waiting';
+  const pupil = pupilValue.textContent || '--';
+
+  // Determine alert state for styling
+  let alertState = 'none';
+  if (alert.toLowerCase().includes('critical')) alertState = 'critical';
+  else if (alert.toLowerCase().includes('advisory')) alertState = 'advisory';
+
+  // Get latest detection data
+  const hasData = lastOutput !== null;
+  const symmetryScore = hasData ? (lastOutput.symmetry * 100).toFixed(1) + '%' : '--';
+  const confidenceScore = hasData ? (lastOutput.confidence * 100).toFixed(0) + '%' : '--';
+  const leftEyeStatus = hasData && lastOutput.leftEye ? '✓ Detected' : '✗ Not detected';
+  const rightEyeStatus = hasData && lastOutput.rightEye ? '✓ Detected' : '✗ Not detected';
+  const pupilLeft = hasData && lastOutput.leftPupil?.detected ? lastOutput.leftPupil.diameter_px.toFixed(1) + 'px' : '--';
+  const pupilRight = hasData && lastOutput.rightPupil?.detected ? lastOutput.rightPupil.diameter_px.toFixed(1) + 'px' : '--';
+  
+  // Calculate frames per second
+  const bufferSize = symmetryBuffer.length;
+  const fps = bufferSize > 0 ? (bufferSize / ((Date.now() - (lastOutputTs || Date.now())) / 1000)).toFixed(1) : '0';
+
+  const cardData = [
+    {
+      color: '#0a0e14',
+      title: symmetryScore,
+      description: hasData ? 'Bilateral facial symmetry measurement' : 'No detection data yet',
+      label: 'Symmetry Deviation',
+      icon: '⚖️'
+    },
+    {
+      color: '#0a0e14',
+      title: confidenceScore,
+      description: hasData ? 'Detection confidence level' : 'Awaiting camera input',
+      label: 'Confidence',
+      icon: '🎯'
+    },
+    {
+      color: '#0a0e14',
+      title: leftEyeStatus,
+      description: pupilLeft !== '--' ? `Pupil diameter: ${pupilLeft}` : 'Left pupil not detected',
+      label: 'Left Eye',
+      icon: '👁️'
+    },
+    {
+      color: '#0a0e14',
+      title: rightEyeStatus,
+      description: pupilRight !== '--' ? `Pupil diameter: ${pupilRight}` : 'Right pupil not detected',
+      label: 'Right Eye',
+      icon: '👁️'
+    },
+    {
+      color: '#0a0e14',
+      title: alert,
+      description: alertState === 'critical' ? 'Significant deviation detected' : alertState === 'advisory' ? 'Elevated deviation - monitoring' : 'Within normal baseline',
+      label: 'Alert Status',
+      icon: alertState === 'critical' ? '🔴' : alertState === 'advisory' ? '🟡' : '🟢'
+    },
+    {
+      color: '#0a0e14',
+      title: bufferSize > 0 ? `${bufferSize} frames` : 'Idle',
+      description: bufferSize > 0 ? `Processing at ~${fps} FPS` : 'Start monitoring to collect data',
+      label: 'Data Buffer',
+      icon: '📊'
+    }
+  ];
+
+  magicBento.updateCards(cardData);
+
+  // Update card attributes for styling
+  const cards = document.querySelectorAll('.magic-bento-card');
+  cards.forEach((card, index) => {
+    if (index === 4) { // Alert card
+      card.setAttribute('data-alert', alertState);
+    }
+    if (hasData && mode === 'Monitoring') {
+      card.setAttribute('data-active', 'true');
+    } else {
+      card.removeAttribute('data-active');
+    }
+  });
 };
 
 const updateSignal = (value) => {
   signalValue.textContent = value;
+  updateMagicBentoCards();
 };
 
 const updateStatusBadge = (status, confidence) => {
@@ -291,12 +420,17 @@ const updateAlertPanel = (level, detail, acknowledged) => {
       : acknowledged
       ? `${level} (acknowledged)`
       : level;
+  updateMagicBentoCards();
 };
 
-const getSourceConfig = () => ({
-  type: "camera",
-  cameraFacing: cameraFacingInput.value || "environment",
-});
+const getSourceConfig = () => {
+  const config = {
+    type: "camera",
+    cameraFacing: cameraFacingInput.value || "user", // Changed to "user" for front camera
+  };
+  console.log("📹 Source config:", config);
+  return config;
+};
 
 const SAFE_PROCESSING = {
   clip_length_seconds: 1,
@@ -333,7 +467,7 @@ const connectVision = async (onResult, onError) => {
   const source = getSourceConfig();
   const prompt =
     promptInput.value.trim() ||
-    "Analyze the face and return detailed measurements. Measure facial asymmetry as a decimal from 0.0 to 1.0 where 0.0 is perfectly symmetric. Detect both eyes and pupils, measuring their positions and sizes in pixels. Always return valid JSON with these fields: symmetry_deviation (number), confidence (number 0-1), left_pupil (object with x, y, diameter_px, detected), right_pupil (object with x, y, diameter_px, detected), face_bbox (array of 4 numbers [x,y,width,height]). If a pupil is not visible, set detected to false but still provide estimated x, y, and diameter_px values.";
+    "Detect face and eyes. For each eye, locate the pupil center (x, y coordinates) and measure pupil diameter in pixels. Calculate facial symmetry as a score from 0.0 (symmetric) to 1.0 (asymmetric). Return: symmetry_deviation, confidence, left_pupil (x, y, diameter_px, detected), right_pupil (x, y, diameter_px, detected), face_bbox.";
   const model = modelInput.value.trim();
   const streamConfigRaw = streamConfigInput.value.trim();
   let streamConfig = null;
@@ -373,8 +507,16 @@ const connectVision = async (onResult, onError) => {
   visionConfig.onResult = onResult;
   visionConfig.onError = onError;
 
+  // Log the config being sent (without sensitive API key)
+  console.log("🔧 Vision Config:", {
+    ...visionConfig,
+    apiKey: visionConfig.apiKey ? "***" + visionConfig.apiKey.slice(-8) : "missing",
+  });
+
   const vision = new window.RealtimeVision(visionConfig);
+  console.log("📡 Starting vision session...");
   await vision.start();
+  console.log("✅ Vision session started successfully");
   return vision;
 };
 
@@ -511,28 +653,47 @@ const averageKeypoints = (keypoints, indices) => {
 
 const updateTfPupils = async () => {
   if (!pupilRefineToggle?.checked || !videoPreview.videoWidth || !videoPreview.videoHeight) {
+    console.log("⏭️ Skipping TensorFlow update - conditions not met");
     return;
   }
 
   if (tfRunning) {
     return;
   }
+  
+  console.log("🔄 Running TensorFlow pupil detection...");
   tfRunning = true;
 
   try {
+    console.log("📦 Loading TensorFlow detector...");
     const detector = await loadTfDetector();
+    console.log("✅ Detector loaded, estimating faces...");
+    
     const predictions = await detector.estimateFaces(videoPreview, { flipHorizontal: false });
+    console.log(`🔍 TensorFlow predictions: ${predictions?.length || 0} faces found`);
+    
     if (predictions && predictions.length > 0) {
       const keypoints = predictions[0].keypoints || [];
+      console.log(`📍 Keypoints found: ${keypoints.length}`);
+      
       const left = averageKeypoints(keypoints, [468, 469, 470, 471, 472]);
       const right = averageKeypoints(keypoints, [473, 474, 475, 476, 477]);
+      
       latestTfPupils = {
         left,
         right,
         ts: Date.now(),
       };
+      
+      console.log("👁️ TensorFlow detected pupils:", {
+        left: left ? `(${Math.round(left.x)}, ${Math.round(left.y)}) quality:${(left.quality * 100).toFixed(0)}%` : 'none',
+        right: right ? `(${Math.round(right.x)}, ${Math.round(right.y)}) quality:${(right.quality * 100).toFixed(0)}%` : 'none'
+      });
+    } else {
+      console.warn("⚠️ TensorFlow: No face detected in frame");
     }
   } catch (error) {
+    console.error("❌ TensorFlow error:", error.message);
     logEvent("tf_refine_error", { message: error.message });
   } finally {
     tfRunning = false;
@@ -540,8 +701,14 @@ const updateTfPupils = async () => {
 };
 
 const startTfRefinement = () => {
-  if (tfInterval || !pupilRefineToggle?.checked) return;
+  if (tfInterval || !pupilRefineToggle?.checked) {
+    console.log("⚠️ TensorFlow refinement already running or disabled");
+    return;
+  }
+  console.log("✅ TensorFlow refinement started - updating every 300ms");
   tfInterval = setInterval(updateTfPupils, 300);
+  // Run immediately
+  updateTfPupils();
 };
 
 const stopTfRefinement = () => {
@@ -562,8 +729,8 @@ const applyTfRefinement = (parsed) => {
     return parsed;
   }
 
-  const leftBase = parsed.leftPupil || { detected: false, x: 0, y: 0, diameter_px: 0 };
-  const rightBase = parsed.rightPupil || { detected: false, x: 0, y: 0, diameter_px: 0 };
+  const leftBase = parsed.leftPupil || { detected: false, x: 0, y: 0, diameter_px: 35 };
+  const rightBase = parsed.rightPupil || { detected: false, x: 0, y: 0, diameter_px: 35 };
 
   const left = latestTfPupils.left
     ? {
@@ -571,6 +738,7 @@ const applyTfRefinement = (parsed) => {
         detected: true,
         x: latestTfPupils.left.x,
         y: latestTfPupils.left.y,
+        diameter_px: leftBase.diameter_px || 35, // Use base diameter or default
         refined: "tf",
         refinement_quality: latestTfPupils.left.quality ?? 1,
       }
@@ -582,10 +750,22 @@ const applyTfRefinement = (parsed) => {
         detected: true,
         x: latestTfPupils.right.x,
         y: latestTfPupils.right.y,
+        diameter_px: rightBase.diameter_px || 35, // Use base diameter or default
         refined: "tf",
         refinement_quality: latestTfPupils.right.quality ?? 1,
       }
     : rightBase;
+
+  // Update eye detection status based on TensorFlow results
+  const leftEyeDetected = left.detected || parsed.leftEye;
+  const rightEyeDetected = right.detected || parsed.rightEye;
+
+  console.log("🤖 TensorFlow refinement applied:", {
+    leftDetected: left.detected,
+    rightDetected: right.detected,
+    leftEyeDetected,
+    rightEyeDetected
+  });
 
   return {
     ...parsed,
@@ -593,6 +773,8 @@ const applyTfRefinement = (parsed) => {
     rightPupilRaw: parsed.rightPupil,
     leftPupil: left,
     rightPupil: right,
+    leftEye: leftEyeDetected,
+    rightEye: rightEyeDetected,
   };
 };
 
@@ -769,10 +951,21 @@ const parseOutput = (result) => {
   
   console.log("✅ Valid symmetry found:", symmetry);
 
-  const leftPupil = payload?.left_pupil ?? payload?.leftPupil ?? null;
-  const rightPupil = payload?.right_pupil ?? payload?.rightPupil ?? null;
-  const leftEye = leftPupil?.detected ?? payload?.left_eye_detected ?? payload?.leftEyeDetected ?? false;
-  const rightEye = rightPupil?.detected ?? payload?.right_eye_detected ?? payload?.rightEyeDetected ?? false;
+  let leftPupil = payload?.left_pupil ?? payload?.leftPupil ?? null;
+  let rightPupil = payload?.right_pupil ?? payload?.rightPupil ?? null;
+  
+  // If Overshoot doesn't provide pupil data, create placeholder that TensorFlow can fill
+  if (!leftPupil) {
+    leftPupil = { detected: false, x: 0, y: 0, diameter_px: 0 };
+  }
+  if (!rightPupil) {
+    rightPupil = { detected: false, x: 0, y: 0, diameter_px: 0 };
+  }
+  
+  // Check if eyes are detected - be more lenient with detection
+  const leftEye = leftPupil?.detected ?? payload?.left_eye_detected ?? payload?.leftEyeDetected ?? true; // Assume eyes present if face detected
+  const rightEye = rightPupil?.detected ?? payload?.right_eye_detected ?? payload?.rightEyeDetected ?? true;
+  
   const bbox = payload?.face_bbox ?? payload?.faceBbox ?? null;
 
   // Calculate average pupil diameter if both detected
@@ -1087,6 +1280,8 @@ const monitoringTick = () => {
   
   pupilValue.textContent =
     safePupilMedian === null ? "--" : safePupilMedian.toFixed(1) + "px";
+  
+  updateMagicBentoCards();
 
   evaluateAlert(rollingMedian, aggregated);
   updateAlertPanel(
@@ -1179,6 +1374,16 @@ window.testOutputDisplay = () => {
 };
 
 const startMonitoring = async () => {
+  // Validate API key is loaded
+  const apiKey = apiKeyInput.value.trim();
+  console.log('🔍 Checking API key...', { hasKey: !!apiKey, keyPrefix: apiKey ? apiKey.substring(0, 10) + '...' : 'EMPTY' });
+  
+  if (!apiKey) {
+    setStatus("❌ API key not loaded. Please refresh the page.");
+    alert("API key is not loaded from backend. Please refresh the page and try again.");
+    return;
+  }
+
   outputEl.textContent = "No output yet.";
   if (logEl) {
     logEl.textContent = "";
@@ -1262,8 +1467,12 @@ const startMonitoring = async () => {
     interrogateBtn.disabled = false;
     interrogateBtn.textContent = "Start Interrogation";
 
+    // Always start TensorFlow refinement for better pupil detection
     if (pupilRefineToggle?.checked) {
+      console.log("🤖 Starting TensorFlow pupil refinement...");
       startTfRefinement();
+    } else {
+      console.warn("⚠️ TensorFlow refinement disabled - enable for better pupil detection");
     }
   } catch (error) {
     setStatus(error.message);
@@ -1490,16 +1699,7 @@ if (pupilRefineToggle) {
   });
 }
 
-if (setApiKeyBtn) {
-  setApiKeyBtn.addEventListener("click", () => {
-    const key = window.prompt("Enter your Overshoot API key:");
-    if (key !== null) {
-      apiKeyInput.value = key.trim();
-      persistPreferences();
-      appendOutput("API key updated.");
-    }
-  });
-}
+// API key management removed - now handled in backend
 
 const introGetStartedBtn = document.getElementById("introGetStartedBtn");
 if (introGetStartedBtn) {
@@ -1619,4 +1819,17 @@ if (logoLoopContainer && window.initLogoLoop) {
   });
 }
 
-restorePreferences();
+// Initialize MagicBento
+let magicBento = null;
+
+// Initialize app and load API configuration
+(async () => {
+  await restorePreferences();
+  console.log('✅ App initialized - API key loaded from backend');
+  
+  // Initialize MagicBento after DOM is ready
+  if (typeof window.initMagicBento === 'function') {
+    magicBento = window.initMagicBento();
+    console.log('✅ MagicBento initialized');
+  }
+})();

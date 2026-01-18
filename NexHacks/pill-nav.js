@@ -78,6 +78,7 @@
 
   const isHomeLink = (href) => href === "#detectionSection" || href === "#home" || href === "";
   const isIntroLink = (href) => href === "#introSection";
+  const isVoiceLink = (href) => href === "#voiceAssessmentSection";
   const isDashboardLink = (href) =>
     href === "#monitoringSection" || href === "#alertsSection";
 
@@ -130,6 +131,38 @@
     });
   }
 
+  const showVoiceView = () => {
+    console.log("🎤 showVoiceView() called");
+    
+    // Hide intro sections
+    const introSection = document.getElementById("introSection");
+    const introHighlights = document.getElementById("introHighlights");
+    const introViews = document.querySelectorAll(".intro-view");
+    
+    if (introSection) introSection.classList.add("hidden");
+    if (introHighlights) introHighlights.classList.add("hidden");
+    introViews.forEach((section) => section.classList.add("hidden"));
+    
+    // Hide other app sections but show voice assessment
+    const appViews = document.querySelectorAll(".app-view");
+    appViews.forEach((section) => {
+      if (section.id === "voiceAssessmentSection") {
+        section.classList.remove("hidden");
+        console.log("✅ Showing voice assessment");
+      } else {
+        section.classList.add("hidden");
+      }
+    });
+    
+    // Scroll to voice assessment
+    setTimeout(() => {
+      const voiceSection = document.getElementById("voiceAssessmentSection");
+      if (voiceSection) {
+        voiceSection.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }, 100);
+  };
+
   const handleNavClick = (event) => {
     const target = event.target.closest("a");
     if (!target) return;
@@ -148,6 +181,12 @@
     if (isIntroLink(href)) {
       console.log("📍 About link clicked - showing intro view");
       showIntroView();
+      return;
+    }
+    
+    if (isVoiceLink(href)) {
+      console.log("🎤 Voice link clicked - showing voice assessment");
+      showVoiceView();
       return;
     }
     
@@ -209,6 +248,9 @@
         } else if (isIntroLink(href)) {
           console.log("📍 Mobile: About link clicked");
           showIntroView();
+        } else if (isVoiceLink(href)) {
+          console.log("🎤 Mobile: Voice link clicked");
+          showVoiceView();
         } else if (isDashboardLink(href)) {
           console.log("✅ Mobile: Dashboard link clicked");
           showAppView();

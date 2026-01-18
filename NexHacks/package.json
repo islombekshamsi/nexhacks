@@ -3,6 +3,8 @@
     "dev": "node server.js"
   },
   "dependencies": {
-    "@overshoot/sdk": "^0.1.0-alpha.2"
+    "@overshoot/sdk": "^0.1.0-alpha.2",
+    "elevenlabs": "^0.8.2",
+    "form-data": "^4.0.0"
   }
 }
